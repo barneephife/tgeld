@@ -25,6 +25,7 @@
 .VolumeIcon.icns
 *.pem
 /.vscode
+switch-mode.sh
 
 # debug
 npm-debug.log*

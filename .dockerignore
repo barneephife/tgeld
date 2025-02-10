@@ -38,6 +38,7 @@ logs/
 .DS_Store
 ._*
 Thumbs.db
+switch-mode.sh
 
 # Environment
 .env

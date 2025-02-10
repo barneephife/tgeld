@@ -1,234 +1,144 @@
-# Tgeld Task Management System
+# Taschengeld Family Allowance Application
+
+Taschengeld is an allowance tracker application designed to help families manage chores, tasks, and allowances for children. It features a user-friendly interface for both parents and children to interact with.
+
+Taschengeld is the German word for "pocket money" and was developed for a family in Switzerland.  As a result, there are two German words, "Taschengeld" and "Sparkässeli" which means "Piggy-Bank".
 
 A modern task management system built with Next.js, PostgreSQL, and Docker.
 
 ## Features
 
-- Task creation and management
-- Task completion tracking
-- Payout value tracking
-- Docker-based production deployment
+    👥 User Management
+        - Create accounts for family members
+        - User profiles and preferences
+        - Access control
+
+    📋 Task Management
+        - Create and manage tasks
+        - Set task values and descriptions
+        - Track task completion
+
+    💵 Payout System
+        - Review completed tasks and allocate payment to accounts
+        - Bulk transaction processing
+
+    💰 Piggy-Bank Account System
+        Track account balances and transaction history
+        Manually credit and debit accounts
+
+- Docker-based
 - PostgreSQL database for data persistence
 
 ## Prerequisites
 
-For Development:
-- Node.js 18+ (for local development)
-- PostgreSQL 16
-- Git
-
 For Production:
 - Docker and Docker Compose
-- Git
+
+For Development (software developers):
+- See [README_DEV.md](README_DEV.md)
+
+The rest of this document is for users of the application (AKA: "Production").
 
 ## Quick Start
 
-### Development Setup
+1. Create directory structure
+2. Create docker-compose.yml and .env and set variables (port and password)
+3. Execute: docker compose up -d
 
-1. Clone the repository:
+### Detailed Setup Steps
+
+1. Create a new directory for your Tgeld installation and database storage:
    ```bash
-   git clone https://github.com/barneephife/tgeld.git
-   cd tgeld
+   mkdir tgeld && cd tgeld
+   mkdir -p ./data/postgres
    ```
 
-2. Install dependencies:
+2. Create a `.env` file with your configuration.  Copy the following into your .env:
    ```bash
-   npm install
+   # Database
+   POSTGRES_USER=postgres  #keep or change
+   POSTGRES_PASSWORD=your_secure_password  #CHANGE THIS
+   POSTGRES_DB=tgeld  #keep or change
+   DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public  ##do not change
+
+   # Data directory for PostgreSQL (adjust path as needed)
+   POSTGRES_DATA_DIR=./data/postgres  #change to your preferred backup location.  If you change this, be sure the folder/path exists before starting the container.
    ```
 
-3. Set up environment variables:
-   ```bash
-   cp .env.example .env
-   ```
-   Edit `.env` with your local PostgreSQL configuration.
-
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
-
-The application will be available at `http://localhost:3000`.
-
-### Production Setup
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/barneephife/tgeld.git
-   cd tgeld
-   ```
-
-2. Set up environment variables:
-   ```bash
-   cp .env.example .env
-   ```
-   Edit `.env` with your production configuration.
-
-3. Start the application:
-   ```bash
-   docker-compose up -d
+3. Create a `docker-compose.yml` file with the following content.  Change only the ports if needed:
+   ```yaml
+   services:
+     app:
+       image: tgeld/tgeld:latest
+       ports:
+         - "8071:3000"  #change left number if port 8071 is already in use on your system (e.g., "8072:3000")
+       environment:
+         - DATABASE_URL=${DATABASE_URL}
+       depends_on:
+         - db
+     db:
+       image: postgres:16-alpine
+       environment:
+         - POSTGRES_USER=${POSTGRES_USER}
+         - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+         - POSTGRES_DB=${POSTGRES_DB}
+       volumes:
+         - ${POSTGRES_DATA_DIR}:/var/lib/postgresql/data
    ```
 
-The application will be available at `http://localhost:3000`.
-
-## Environment Configuration
-
-### Development Environment
-
-```bash
-# Database
-DATABASE_URL=postgresql://postgres:your_password@localhost:5432/tgeld?schema=public
-```
-
-### Production Environment
-
-```bash
-# Application
-NODE_ENV=production
-NEXT_PUBLIC_PORT=21971
-
-# Database
-DB_HOST=db
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=your_secure_password
-DB_DATABASE=tgeld
-
-# Upload Configuration
-UPLOAD_PATH=/app/uploads
-
-# Prisma
-DATABASE_URL=postgresql://postgres:your_secure_password@db:5432/tgeld?schema=public
-```
-
-## Development Setup
-
-1. Install dependencies:
+4. Start the application:
    ```bash
-   npm install
+   docker compose up -d
    ```
 
-2. Generate Prisma client:
-   ```bash
-   npx prisma generate
-   ```
+The application will be available at `http://localhost:8071` (or whichever port you configured in `docker-compose.yml`).
 
-3. Run migrations:
-   ```bash
-   npx prisma migrate dev
-   ```
+> **Note about ports**: In the `docker-compose.yml` file, the ports are configured as `HOST_PORT:CONTAINER_PORT`. If port 8071 is already in use on your system, change the left number to an available port (e.g., "8072:3000"). The right number must remain 3000 as that's the port the application uses inside the container.
 
-4. Start development server:
-   ```bash
-   npm run dev
-   ```
-
-## Production Deployment
-
-1. Build Docker image:
-   ```bash
-   docker build -t tgeld/tgeld:latest -f Dockerfile.prod .
-   ```
-
-2. Push to Docker Hub:
-   ```bash
-   docker push tgeld/tgeld:latest
-   ```
-
-3. Deploy using docker-compose:
-   ```bash
-   docker-compose pull
-   docker-compose up -d
-   ```
+> **Note about data storage**: PostgreSQL data is stored in the directory specified by `POSTGRES_DATA_DIR` in your `.env` file. By default, this is `./data/postgres` relative to your docker-compose.yml file. You can change this to any location on your system (e.g., `/home/user/backups/tgeld/postgres` or `C:\tgeld\data\postgres`) to better integrate with your backup system. Just make sure the directory exists before starting the containers.
 
 ## Database Management
 
-### Development
-
-Create a database backup:
-```bash
-pg_dump -U postgres tgeld > backup.sql
-```
-
-Restore from backup:
-```bash
-psql -U postgres -d tgeld < backup.sql
-```
-
-### Production
-
-Create a database backup:
+### Create a database backup:
+#### From outside the application:
 ```bash
 docker-compose exec db pg_dump -U postgres tgeld > backup.sql
 ```
+or
+#### From within the application:
+   - Click the Global App Settings icon found on the top right corner.
+   - Scroll to the Backup and Restore Section.
+   - Locate Full Database Backup and click the "Download" button.  Save file to your preferred location.
 
-Restore from backup:
+### Restore a database backup:
+#### From outside the application:
 ```bash
 cat backup.sql | docker-compose exec -T db psql -U postgres -d tgeld
 ```
+or
+#### From within the application:
+   - Click the Global App Settings icon found on the top right corner.
+   - Scroll to the Backup and Restore Section.
+   - Locate Full Database Backup and click the "Upload" button.  Find the saved file to your preferred location.
+
 
 ## Updating the Application
 
-### Development
-1. Pull latest changes:
-   ```bash
-   git pull origin main
-   ```
-
-2. Update dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Run migrations:
-   ```bash
-   npx prisma migrate dev
-   ```
-
-### Production
-1. Pull latest changes:
-   ```bash
-   git pull origin main
-   ```
-
-2. Rebuild and restart:
-   ```bash
-   docker-compose down
-   docker-compose pull
-   docker-compose up -d
-   ```
-
-## API Documentation
-
-### Tasks
-
-- `GET /api/tasks` - List all tasks
-- `POST /api/tasks` - Create a new task
-- `GET /api/tasks/:id` - Get task details
-- `PUT /api/tasks/:id` - Update a task
-- `DELETE /api/tasks/:id` - Delete a task
-- `GET /api/active-tasks` - List active tasks
-
-## Project Structure
-
-```
-tgeld/
-├── app/                 # Next.js application
-│   ├── api/            # API routes
-│   ├── lib/            # Shared libraries
-│   └── types/          # TypeScript types
-├── components/         # React components
-├── prisma/            # Database schema and migrations
-├── public/            # Static assets
-└── docker/            # Docker configuration
+To update to the latest version (Docker image):
+```bash
+docker compose down    # Stop and remove existing containers
+docker compose pull   # Get the latest version of the image
+docker compose up -d  # Start containers with the new version
 ```
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+> **Note about disk space**: The update process keeps old versions of the images on your system. If you want to clean up old, unused images to free up disk space, you can run:
+```bash
+docker image prune -f  # Remove unused images
+```
+Or to see how much space can be freed first:
+```bash
+docker image prune -f --dry-run  # Show what would be removed
+```
 
 ## License
 

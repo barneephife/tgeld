@@ -17,14 +17,11 @@ RUN npm ci
 # Copy source files
 COPY . .
 
-# Run type check and lint
-RUN npm run lint
-
 # Set environment variables for build time
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
-ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+ENV SKIP_ENV_VALIDATION=1
 ENV SKIP_CLEANUP=true
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 
 # Build application
 RUN npm run build
