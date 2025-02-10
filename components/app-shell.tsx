@@ -4,20 +4,24 @@ import Link from 'next/link';
 import { Sidebar } from '@/components/sidebar';
 import { Settings } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { useLanguage } from '@/components/context/language-context';
 
 interface AppShellProps {
   children: React.ReactNode;
 }
 
 export function AppShell({ children }: AppShellProps) {
+  const { getTermFor } = useLanguage();
+
   return (
-    <div className='flex flex-col h-screen w-full'>
-      <header className='bg-primary text-primary-foreground p-4 flex justify-between items-center'>
+    <div className='h-screen flex flex-col'>
+      {/* Fixed Header */}
+      <header className='h-16 bg-primary text-primary-foreground px-4 flex justify-between items-center fixed top-0 left-0 right-0 z-50'>
         <Link
           href='/home'
           className='text-2xl font-bold hover:text-muted-foreground transition-colors'
         >
-          Taschengeld
+          {getTermFor('Taschengeld', 'Pocket Money')}
         </Link>
         <div className='flex items-center space-x-6'>
           <ThemeToggle />
@@ -26,9 +30,17 @@ export function AppShell({ children }: AppShellProps) {
           </Link>
         </div>
       </header>
-      <div className='flex flex-1 overflow-hidden'>
-        <Sidebar />
-        <div className='flex-1 bg-background'>{children}</div>
+
+      {/* Main Content Area */}
+      <div className='flex flex-1 pt-16'>
+        {' '}
+        {/* Add padding-top to account for fixed header */}
+        {/* Fixed Sidebar */}
+        <div className='w-64 fixed left-0 top-16 bottom-0 bg-background border-r border-border'>
+          <Sidebar />
+        </div>
+        {/* Scrollable Content Area */}
+        <div className='flex-1 ml-64 overflow-y-auto'>{children}</div>
       </div>
     </div>
   );

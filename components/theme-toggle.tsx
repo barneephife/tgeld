@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
-import { Sun, Moon, Waves, Trees, Sunset, Monitor } from 'lucide-react';
+import { Sun, Moon, Waves, Trees, Flower2, Monitor } from 'lucide-react';
 import type { Theme } from '@/contexts/theme-context';
 
 const themes = [
@@ -16,7 +16,7 @@ const themes = [
   { id: 'dark', label: 'Dark', icon: Moon },
   { id: 'ocean', label: 'Ocean', icon: Waves },
   { id: 'forest', label: 'Forest', icon: Trees },
-  { id: 'sunset', label: 'Sunset', icon: Sunset },
+  { id: 'blossom', label: 'Blossom', icon: Flower2 },
   { id: 'system', label: 'System', icon: Monitor },
 ] as const;
 

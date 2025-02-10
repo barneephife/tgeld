@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const taskData = {
       ...body,
-      is_active: true // Set is_active to true by default
+      is_active: true, // Set is_active to true by default
     };
     const task = await taskRepository.create(taskData);
     return NextResponse.json(task, { status: 201 });

@@ -10,11 +10,13 @@ import { WithdrawFundsModal } from './withdraw-funds-modal';
 import { TransactionHistoryModal } from './transaction-history-modal';
 import { PiggyBankUser } from '@/app/types/piggyBankUser';
 import { useMode } from '@/components/context/mode-context';
-import { HandCoins } from 'lucide-react';
+import { useLanguage } from '@/components/context/language-context';
+import { PiggyBank as PiggyBankIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function PiggyBank() {
-  const { isParentMode } = useMode();
+  const { isParentMode, enforceRoles } = useMode();
+  const { getTermFor } = useLanguage();
   const [users, setUsers] = useState<PiggyBankUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -94,119 +96,147 @@ export function PiggyBank() {
 
   return (
     <div className='h-[calc(100vh-4rem)] flex flex-col bg-background'>
+      {/* Fixed Header */}
       <div className='p-8 bg-background-secondary'>
-        <div className='flex items-center space-x-4 pb-6 border-b border-border'>
-          <HandCoins className='h-8 w-8 text-content-primary' />
-          <h1 className='text-3xl font-medium text-content-primary'>Sparkässeli</h1>
+        <div className='flex items-center justify-between pb-6 border-b border-border'>
+          <div className='flex items-center space-x-4'>
+            <PiggyBankIcon className='h-8 w-8 text-content-primary' />
+            <h1 className='text-3xl font-medium text-content-primary'>
+              {getTermFor('Sparkässeli', 'Piggy Bank')}
+            </h1>
+          </div>
         </div>
       </div>
 
+      {/* Scrollable Content */}
       <div className='flex-1 overflow-y-auto p-8 pt-4 bg-background-secondary'>
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6'>
           {users.map((user) => (
             <Card
               key={user.user_id}
               className={cn(
-                'overflow-hidden shadow-md backdrop-blur-sm',
-                'bg-green-100/50 hover:bg-green-200/50 border-green-200',
-                'dark:bg-green-900/20 dark:hover:bg-green-800/30 dark:border-green-800',
-                'transition-all duration-200'
+                'bg-green-100/50 hover:bg-green-200/50',
+                'dark:bg-green-900/20 dark:hover:bg-green-800/30',
+                'transition-all duration-200 shadow-md cursor-pointer'
               )}
+              onClick={() => setSelectedAccount(user)}
             >
-              <CardHeader className='flex flex-col items-center text-center'>
-                <IconComponent 
-                  icon={user.icon} 
-                  className={cn(
-                    'w-20 h-20 mb-2',
-                    'text-green-700 dark:text-green-300'
-                  )} 
-                />
-                <CardTitle className={cn(
-                  'mb-2',
-                  'text-green-900 dark:text-green-100'
-                )}>
-                  {user.name}
+              <CardHeader>
+                <CardTitle>
+                  <div className='flex items-center justify-between'>
+                    <div className='flex items-center space-x-3'>
+                      <IconComponent
+                        icon={user.icon}
+                        className={cn('h-8 w-8', 'text-green-700 dark:text-green-300')}
+                      />
+                      <div>
+                        <div className='text-lg font-medium text-green-900 dark:text-green-100'>
+                          {user.name}&apos;s {getTermFor('Sparkässeli', 'Piggy Bank')}
+                        </div>
+                        <CurrencyDisplay
+                          value={user.account.balance}
+                          className='text-2xl font-bold text-green-700 dark:text-green-300'
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </CardTitle>
-                <div className='text-2xl font-bold mb-4'>
-                  <CurrencyDisplay
-                    value={parseFloat(user.account.balance)}
-                    className={cn(
-                      'text-2xl font-bold',
-                      'text-green-700 dark:text-green-300'
-                    )}
-                  />
-                </div>
-                <div className='flex flex-col gap-2 w-full'>
-                  {isParentMode && (
-                    <div className='flex gap-2'>
+              </CardHeader>
+              <div className='p-4 pt-0 flex flex-col gap-2'>
+                <div className='flex gap-2'>
+                  {(!enforceRoles || isParentMode) && (
+                    <>
                       <Button
-                        onClick={() => {
+                        variant='default'
+                        className={cn(
+                          'flex-1',
+                          'bg-green-600 hover:bg-green-700',
+                          'dark:bg-green-700 dark:hover:bg-green-600',
+                          'text-white'
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setSelectedAccount(user);
                           setIsAddFundsModalOpen(true);
                         }}
-                        className={cn(
-                          'flex-1 font-semibold',
-                          'bg-green-600 hover:bg-green-700 text-white',
-                          'dark:bg-green-700 dark:hover:bg-green-600'
-                        )}
                       >
                         Deposit
                       </Button>
                       <Button
-                        onClick={() => {
+                        variant='default'
+                        className={cn(
+                          'flex-1',
+                          'bg-red-600 hover:bg-red-700',
+                          'dark:bg-red-700 dark:hover:bg-red-600',
+                          'text-white'
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setSelectedAccount(user);
                           setIsWithdrawFundsModalOpen(true);
                         }}
-                        className={cn(
-                          'flex-1 font-semibold',
-                          'bg-red-600 hover:bg-red-700 text-white',
-                          'dark:bg-red-700 dark:hover:bg-red-600'
-                        )}
                       >
                         Withdraw
                       </Button>
-                    </div>
+                    </>
                   )}
-                  <Button
-                    onClick={() => {
-                      setSelectedAccount(user);
-                      setIsTransactionsModalOpen(true);
-                    }}
-                    className={cn(
-                      'w-full font-semibold',
-                      'bg-blue-600 hover:bg-blue-700 text-white',
-                      'dark:bg-blue-700 dark:hover:bg-blue-600'
-                    )}
-                  >
-                    Transactions
-                  </Button>
                 </div>
-              </CardHeader>
+                <Button
+                  variant='default'
+                  className={cn(
+                    'w-full',
+                    'bg-blue-600 hover:bg-blue-700',
+                    'dark:bg-blue-700 dark:hover:bg-blue-600',
+                    'text-white'
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedAccount(user);
+                    setIsTransactionsModalOpen(true);
+                  }}
+                >
+                  Transactions
+                </Button>
+              </div>
             </Card>
           ))}
         </div>
       </div>
 
+      {/* Modals */}
       {selectedAccount && (
         <>
           <AddFundsModal
             isOpen={isAddFundsModalOpen}
-            onClose={() => setIsAddFundsModalOpen(false)}
+            onClose={() => {
+              setIsAddFundsModalOpen(false);
+              setSelectedAccount(null);
+            }}
             onAddFunds={handleAddFunds}
             userName={selectedAccount.name}
             userIcon={selectedAccount.icon}
           />
           <WithdrawFundsModal
             isOpen={isWithdrawFundsModalOpen}
-            onClose={() => setIsWithdrawFundsModalOpen(false)}
-            onWithdrawFunds={handleWithdrawFunds}
-            balance={parseFloat(selectedAccount.account.balance)}
+            onClose={() => {
+              setIsWithdrawFundsModalOpen(false);
+              setSelectedAccount(null);
+            }}
+            onWithdrawFunds={async (amount, comments, photo) => {
+              await handleWithdrawFunds(amount, comments, photo);
+              setIsWithdrawFundsModalOpen(false);
+              setSelectedAccount(null);
+            }}
+            balance={selectedAccount.account.balance}
             userName={selectedAccount.name}
             userIcon={selectedAccount.icon}
           />
           <TransactionHistoryModal
             isOpen={isTransactionsModalOpen}
-            onClose={() => setIsTransactionsModalOpen(false)}
+            onClose={() => {
+              setIsTransactionsModalOpen(false);
+              setSelectedAccount(null);
+            }}
             user={selectedAccount}
           />
         </>

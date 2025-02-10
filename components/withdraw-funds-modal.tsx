@@ -18,7 +18,7 @@ interface WithdrawFundsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onWithdrawFunds: (amount: number, comments: string, photo: string | null) => Promise<void>;
-  balance: number;
+  balance: string | number;
   userName: string;
   userIcon: string;
 }
@@ -59,7 +59,8 @@ export function WithdrawFundsModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const numAmount = parseFloat(amount);
-    if (!isNaN(numAmount) && numAmount > 0 && numAmount <= balance && !isSubmitting) {
+    const numBalance = Number(balance);
+    if (!isNaN(numAmount) && numAmount > 0 && numAmount <= numBalance && !isSubmitting) {
       setIsSubmitting(true);
       try {
         await onWithdrawFunds(numAmount, comments, photo);
@@ -112,7 +113,7 @@ export function WithdrawFundsModal({
         <form onSubmit={handleSubmit}>
           <div className='space-y-4'>
             <div>
-              <Label htmlFor='amount'>Amount (Max: {balance.toFixed(2)})</Label>
+              <Label htmlFor='amount'>Amount (Max: {Number(balance).toFixed(2)})</Label>
               <Input
                 id='amount'
                 type='number'
@@ -121,7 +122,7 @@ export function WithdrawFundsModal({
                 placeholder='Enter amount'
                 step='0.01'
                 min='0'
-                max={balance}
+                max={Number(balance)}
                 required
                 disabled={isSubmitting}
               />

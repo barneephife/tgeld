@@ -13,7 +13,7 @@ const config: Config = {
     'theme-dark',
     'theme-ocean',
     'theme-forest',
-    'theme-sunset',
+    'theme-blossom',
     {
       pattern: /^bg-/,
       variants: ['hover'],

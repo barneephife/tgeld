@@ -7,7 +7,7 @@ export async function GET() {
   console.log('Active tasks API called - ' + new Date().toISOString());
   console.log('Environment:', process.env.NODE_ENV);
   console.log('Database URL:', process.env.DATABASE_URL);
-  
+
   try {
     console.log('Fetching active tasks from repository...');
     const activeTasks = await taskRepository.getActiveTasks();

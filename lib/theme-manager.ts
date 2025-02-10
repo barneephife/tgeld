@@ -46,7 +46,7 @@ class ThemeManager {
       'theme-dark',
       'theme-ocean',
       'theme-forest',
-      'theme-sunset'
+      'theme-blossom'
     );
     // Add the new theme class
     document.documentElement.classList.add(`theme-${theme}`);

@@ -100,7 +100,7 @@ This approach:
 - [x] Run `npm run build`
 - [x] Run `npm start`
 - [x] Verify all features in production mode
-- [x] Document any issues found:docker 
+- [x] Document any issues found:docker
   - ~~Warning: Missing "soundurl" column in database (needs migration)~~ Fixed: Updated column name in backup API
   - ~~Warning: Standalone output configuration requires different start command~~ Fixed: Using node server.js
   - Action Items:
@@ -146,20 +146,26 @@ This approach:
 ## Docker Hub Repository Details
 
 ### Repository Information
+
 - Repository Name: `tgeld/tgeld`
 - Repository Type: Public
 - Latest Tag: `latest`
 - Pull Command: `docker pull tgeld/tgeld:latest`
 
 ### Authentication
+
 To authenticate with Docker Hub:
+
 ```bash
 docker login
 ```
+
 Use your Docker Hub credentials when prompted.
 
 ### Image Management
+
 Building and pushing a new version:
+
 ```bash
 # Build the image
 docker build -t tgeld/tgeld:latest -f Dockerfile.prod .
@@ -171,12 +177,15 @@ docker push tgeld/tgeld:latest
 ## Environment Setup Process
 
 ### 1. Environment File Setup
+
 1. Copy the example environment file:
+
    ```bash
    cp .env.example .env
    ```
 
 2. Configure the following variables in `.env`:
+
    ```bash
    # Application
    NODE_ENV=production
@@ -197,12 +206,15 @@ docker push tgeld/tgeld:latest
    ```
 
    Important notes:
+
    - Replace `your_secure_password` with a strong password
    - Keep `DB_HOST=db` as is (this is the Docker service name)
    - The `DATABASE_URL` must match the database credentials
 
 ### 2. Directory Structure
+
 Ensure the following directories exist and are writable:
+
 ```
 tgeld/
 ├── .env                 # Your environment file
@@ -211,14 +223,18 @@ tgeld/
 ```
 
 ### 3. Volume Management
+
 The following Docker volumes are automatically created:
+
 - `tgeld_postgres_data`: Persists database data
 - `tgeld_uploads`: Stores uploaded files
 
 These volumes persist data across container restarts and updates.
 
 ### 4. Initial Deployment
+
 To start the application:
+
 ```bash
 # Pull the latest images
 docker-compose pull
@@ -228,6 +244,7 @@ docker-compose up -d
 ```
 
 The application will be available at:
+
 - Web Interface: `http://localhost:3000`
 - API Endpoints: `http://localhost:3000/api/*`
 
@@ -253,11 +270,14 @@ The application will be available at:
 ## Test Results
 
 ### Data Persistence Test
+
 1. Initial Data Creation
+
    - Created two test tasks with specific values
    - Verified tasks were stored in database
 
 2. Application Update
+
    - Built new Docker image with `is_active` defaulting to true
    - Pushed image to Docker Hub
    - Updated running containers
@@ -268,7 +288,9 @@ The application will be available at:
    - No data loss during update
 
 ### Update Process Test
+
 1. Code Changes
+
    - Modified task creation API to set `is_active` to true by default
    - Successfully built and pushed new image
    - Smooth deployment with docker-compose
@@ -280,6 +302,7 @@ The application will be available at:
    - No service interruption during update
 
 ### Test Data
+
 ```sql
 task_id |    title    |     description     | payout_value | is_active
 ----------------------------------------------------------------------
@@ -289,17 +312,21 @@ task_id |    title    |     description     | payout_value | is_active
 ```
 
 ### Update Process Documentation
+
 1. Build new image:
+
    ```bash
    docker build -t tgeld/tgeld:latest -f Dockerfile.prod .
    ```
 
 2. Push to Docker Hub:
+
    ```bash
    docker push tgeld/tgeld:latest
    ```
 
 3. Update running containers:
+
    ```bash
    docker-compose pull && docker-compose up -d
    ```
@@ -333,6 +360,7 @@ task_id |    title    |     description     | payout_value | is_active
 The following documentation has been completed:
 
 1. **README.md**
+
    - Project overview
    - Installation instructions
    - Configuration guide
@@ -340,12 +368,14 @@ The following documentation has been completed:
    - Development setup
 
 2. **Getting Started Guide**
+
    - Installation process
    - Environment setup
    - Initial configuration
    - Troubleshooting
 
 3. **Architecture Documentation**
+
    - System overview
    - Component architecture
    - Security considerations
@@ -366,12 +396,14 @@ All documentation is now complete and up-to-date with the current state of the p
 When running the Next.js application in Docker with standalone output mode, the following configurations are required for API routes to work properly:
 
 1. API Route Configuration:
+
    - Add `export const dynamic = 'force-dynamic'` to API routes to prevent static generation
    - Example:
+
      ```typescript
      // app/api/active-tasks/route.ts
      export const dynamic = 'force-dynamic';
-     
+
      export async function GET() {
        // ... route handler code
      }
@@ -385,6 +417,7 @@ When running the Next.js application in Docker with standalone output mode, the 
      ```
 
 These configurations ensure that:
+
 - API routes are properly accessible from both inside and outside the container
 - Routes are not statically generated, allowing dynamic data fetching
 - The server listens on all network interfaces, enabling proper Docker networking
@@ -402,11 +435,13 @@ These configurations ensure that:
 ## Deployment Steps
 
 1. Build and start the containers:
+
    ```bash
    docker-compose up --build -d
    ```
 
 2. Monitor the migration process:
+
    ```bash
    docker-compose logs -f app
    ```
@@ -419,6 +454,7 @@ These configurations ensure that:
 ## Backup and Restore
 
 1. Create a database backup:
+
    ```bash
    docker-compose exec db pg_dump -U ${DB_USER} ${DB_DATABASE} > backup.sql
    ```
@@ -431,6 +467,7 @@ These configurations ensure that:
 ## Troubleshooting
 
 1. If migrations fail:
+
    - Check the logs: `docker-compose logs app`
    - Verify database connection: `docker-compose exec db pg_isready -U ${DB_USER} -d ${DB_DATABASE}`
    - Manual migration: `docker-compose exec app npx prisma migrate deploy`
@@ -443,14 +480,15 @@ These configurations ensure that:
 ## Rollback Plan
 
 1. If deployment fails:
+
    ```bash
    # Stop the containers
    docker-compose down
-   
+
    # Restore from backup
    docker-compose up -d db
    docker-compose exec -T db psql -U ${DB_USER} ${DB_DATABASE} < backup.sql
-   
+
    # Start the application
    docker-compose up -d app
    ```
@@ -464,11 +502,13 @@ These configurations ensure that:
 ## Monitoring
 
 1. Container health:
+
    ```bash
    docker-compose ps
    ```
 
 2. Database status:
+
    ```bash
    docker-compose exec db pg_isready
    ```

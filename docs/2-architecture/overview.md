@@ -48,6 +48,7 @@ The Tgeld Task Management System is built using a modern, containerized architec
 ### Container Components
 
 1. **Next.js Container (app)**
+
    - Base Image: `node:18-alpine`
    - Exposed Port: 3000
    - Volumes:
@@ -63,11 +64,13 @@ The Tgeld Task Management System is built using a modern, containerized architec
 ## Data Flow
 
 1. **Task Creation**
+
    ```
    Client → API Route → Prisma → PostgreSQL
    ```
 
 2. **Task Retrieval**
+
    ```
    PostgreSQL → Prisma → API Route → Client
    ```
@@ -143,6 +146,7 @@ The Tgeld Task Management System is built using a modern, containerized architec
 The system is designed to scale in the following ways:
 
 1. **Vertical Scaling**
+
    - Increase container resources
    - Upgrade database specifications
 
@@ -188,11 +192,13 @@ The system is designed to scale in the following ways:
 ## Future Architecture Considerations
 
 1. **Microservices**
+
    - Split into smaller services
    - Independent scaling
    - Service isolation
 
 2. **Cloud Integration**
+
    - Cloud storage
    - Managed databases
    - Container orchestration

@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
 // Define available themes
-export type Theme = 'light' | 'dark' | 'ocean' | 'forest' | 'sunset' | 'system';
+export type Theme = 'light' | 'dark' | 'ocean' | 'forest' | 'blossom' | 'system';
 
 interface ThemeContextType {
   theme: Theme;
@@ -67,8 +67,14 @@ export function ThemeProvider({ children, defaultTheme = 'light' }: ThemeProvide
   // Apply theme to document root and store preference
   useEffect(() => {
     const root = document.documentElement;
-    const themeClasses = ['theme-light', 'theme-dark', 'theme-ocean', 'theme-forest', 'theme-sunset'];
-    
+    const themeClasses = [
+      'theme-light',
+      'theme-dark',
+      'theme-ocean',
+      'theme-forest',
+      'theme-blossom',
+    ];
+
     // Remove all theme classes and data attributes
     root.classList.remove(...themeClasses);
     root.removeAttribute('data-theme');

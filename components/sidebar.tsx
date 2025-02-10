@@ -1,78 +1,74 @@
 'use client';
 
 import Link from 'next/link';
+import { useLanguage } from '@/components/context/language-context';
 import { useMode } from '@/components/context/mode-context';
-import { CheckSquare, HandCoins, Banknote, ClipboardList, Users } from 'lucide-react';
-import { ParentModeToggle } from './parent-mode-toggle';
-import { cn } from '@/lib/utils';
+import { CheckSquare, HandCoins, PiggyBank, ListTodo, Users, SwitchCamera } from 'lucide-react';
 
 export function Sidebar() {
-  const { hasFullAccess } = useMode();
-
-  const linkClasses = cn(
-    'flex items-center space-x-3 p-3 rounded-xl transition-colors duration-200',
-    'text-foreground/70 hover:text-foreground',
-    'bg-accent/0 hover:bg-accent/20'
-  );
+  const { getTermFor } = useLanguage();
+  const { toggleParentMode, isParentMode, enforceRoles } = useMode();
 
   return (
-    <div className='w-64 bg-card h-full flex flex-col border-r border-border'>
-      <nav className='flex-1 p-4'>
-        <ul className='space-y-1'>
-          {/* Always visible items */}
-          <li>
-            <Link href='/task-completion' className={linkClasses}>
-              <CheckSquare className='h-5 w-5 text-foreground/70 group-hover:text-foreground' />
-              <span className='font-medium'>Task Completion</span>
-            </Link>
-          </li>
-          <li>
-            <Link href='/piggy-bank' className={linkClasses}>
-              <HandCoins className='h-5 w-5 text-foreground/70 group-hover:text-foreground' />
-              <span className='font-medium'>Sparkässeli</span>
-            </Link>
-          </li>
+    <nav className='h-full flex flex-col'>
+      <div className='flex-1 py-4'>
+        <div className='space-y-2 px-3'>
+          <Link
+            href='/task-completion'
+            className='flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors'
+          >
+            <CheckSquare className='h-5 w-5' />
+            <span>Task Completion</span>
+          </Link>
 
-          {/* First divider */}
-          <li className='py-2'>
-            <div className='border-t border-border'></div>
-          </li>
+          <Link
+            href='/piggy-bank'
+            className='flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors'
+          >
+            <PiggyBank className='h-5 w-5' />
+            <span>{getTermFor('Sparkässeli', 'Piggy Bank')}</span>
+          </Link>
 
-          {/* Parent-only items */}
-          {hasFullAccess && (
+          {(!enforceRoles || isParentMode) && (
             <>
-              <li>
-                <Link href='/payday' className={linkClasses}>
-                  <Banknote className='h-5 w-5 text-foreground/70 group-hover:text-foreground' />
-                  <span className='font-medium'>Payday</span>
-                </Link>
-              </li>
+              <Link
+                href='/payday'
+                className='flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors'
+              >
+                <HandCoins className='h-5 w-5' />
+                <span>Payday</span>
+              </Link>
 
-              {/* Divider between Payday and Task Management */}
-              <li className='py-2'>
-                <div className='border-t border-border'></div>
-              </li>
+              <Link
+                href='/task-management'
+                className='flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors'
+              >
+                <ListTodo className='h-5 w-5' />
+                <span>Task Management</span>
+              </Link>
 
-              <li>
-                <Link href='/task-management' className={linkClasses}>
-                  <ClipboardList className='h-5 w-5 text-foreground/70 group-hover:text-foreground' />
-                  <span className='font-medium'>Task Management</span>
-                </Link>
-              </li>
-              <li>
-                <Link href='/user-management' className={linkClasses}>
-                  <Users className='h-5 w-5 text-foreground/70 group-hover:text-foreground' />
-                  <span className='font-medium'>Family</span>
-                </Link>
-              </li>
+              <Link
+                href='/family'
+                className='flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors'
+              >
+                <Users className='h-5 w-5' />
+                <span>Family</span>
+              </Link>
             </>
           )}
-        </ul>
-      </nav>
-
-      <div className='p-4'>
-        <ParentModeToggle />
+        </div>
       </div>
-    </div>
+
+      {/* Child Mode Link - Fixed to bottom */}
+      <div className='px-3 py-4 border-t'>
+        <button
+          onClick={() => toggleParentMode()}
+          className='w-full flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors'
+        >
+          <SwitchCamera className='h-5 w-5' />
+          <span>Switch to {isParentMode ? 'Child' : 'Parent'} Mode</span>
+        </button>
+      </div>
+    </nav>
   );
 }

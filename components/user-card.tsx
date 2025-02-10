@@ -22,18 +22,13 @@ export function UserCard({ user, onClick }: UserCardProps) {
     >
       <div className='flex items-center space-x-4'>
         <div className='w-16 h-16 flex items-center justify-center'>
-          <IconComponent 
-            icon={user.icon} 
-            className={cn(
-              'w-12 h-12',
-              'text-green-700 dark:text-green-300'
-            )} 
+          <IconComponent
+            icon={user.icon}
+            className={cn('w-12 h-12', 'text-green-700 dark:text-green-300')}
           />
         </div>
         <div>
-          <h3 className='text-lg font-semibold text-green-900 dark:text-green-100'>
-            {user.name}
-          </h3>
+          <h3 className='text-lg font-semibold text-green-900 dark:text-green-100'>{user.name}</h3>
           <p className='text-sm text-green-700 dark:text-green-300'>
             {user.role === 'parent' ? 'Parent' : 'Child'}
           </p>

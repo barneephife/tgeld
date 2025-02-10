@@ -18,7 +18,7 @@ const nextConfig = {
   output: 'standalone',
   experimental: {
     workerThreads: false,
-    cpus: 1
+    cpus: 1,
   },
   typescript: {
     ignoreBuildErrors: true,
@@ -30,8 +30,8 @@ const nextConfig = {
   staticPageGenerationTimeout: 0,
   env: {
     // Add dummy database URL for build time
-    DATABASE_URL: process.env.DATABASE_URL || "postgresql://dummy:dummy@localhost:5432/dummy"
-  }
-}
+    DATABASE_URL: process.env.DATABASE_URL || 'postgresql://dummy:dummy@localhost:5432/dummy',
+  },
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

@@ -7,11 +7,13 @@ This guide will walk you through the process of installing and setting up the Tg
 Before you begin, ensure you have the following installed:
 
 For Development:
+
 - Node.js 18 or later
 - Git
 - PostgreSQL 16
 
 For Production:
+
 - Docker Engine (24.0.0 or later)
 - Docker Compose V2
 - Git
@@ -21,34 +23,40 @@ For Production:
 ### Development Setup
 
 1. **Clone the Repository**
+
    ```bash
    git clone https://github.com/barneephife/tgeld.git
    cd tgeld
    ```
 
 2. **Install Dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Configure Environment**
+
    ```bash
    # Copy example environment file
    cp .env.example .env
    ```
 
    Edit `.env` and configure:
+
    ```bash
    # Database
    DATABASE_URL=postgresql://postgres:your_password@localhost:5432/tgeld?schema=public
    ```
 
 4. **Start Development Server**
+
    ```bash
    npm run dev
    ```
 
    Access the application at:
+
    ```
    http://localhost:3000
    ```
@@ -56,18 +64,21 @@ For Production:
 ### Production Setup
 
 1. **Clone the Repository**
+
    ```bash
    git clone https://github.com/barneephife/tgeld.git
    cd tgeld
    ```
 
 2. **Configure Environment**
+
    ```bash
    # Copy example environment file
    cp .env.example .env
    ```
 
    Edit `.env` and configure:
+
    ```bash
    # Application
    NODE_ENV=production
@@ -85,6 +96,7 @@ For Production:
    ```
 
 3. **Start the Application**
+
    ```bash
    # Pull the latest images
    docker-compose pull
@@ -94,7 +106,9 @@ For Production:
    ```
 
 4. **Verify Installation**
+
    - Check container status:
+
      ```bash
      docker-compose ps
      ```
@@ -109,6 +123,7 @@ For Production:
 ### Development Environment
 
 1. **Create Initial Task**
+
    ```bash
    curl -X POST http://localhost:3000/api/tasks \
      -H "Content-Type: application/json" \
@@ -123,6 +138,7 @@ For Production:
 ### Production Environment
 
 1. **Create Initial Task**
+
    ```bash
    curl -X POST http://localhost:3000/api/tasks \
      -H "Content-Type: application/json" \
@@ -139,8 +155,10 @@ For Production:
 ### Development Environment Issues
 
 1. **Database Connection**
+
    - Error: `connection refused`
    - Solution: Ensure PostgreSQL is running and accessible
+
    ```bash
    # Check PostgreSQL status
    pg_isready
@@ -156,10 +174,12 @@ For Production:
 ### Production Environment Issues
 
 1. **Port Conflicts**
+
    - Error: `port is already allocated`
    - Solution: Change the port in `.env` and `docker-compose.yml`
 
 2. **Database Connection**
+
    - Error: `connection refused`
    - Solution: Wait a few seconds for the database to initialize
 
@@ -172,6 +192,7 @@ For Production:
 If you encounter any issues:
 
 1. Check application logs:
+
    ```bash
    # Development
    npm run dev
@@ -181,6 +202,7 @@ If you encounter any issues:
    ```
 
 2. Verify environment variables:
+
    ```bash
    # Development
    cat .env

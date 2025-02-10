@@ -19,7 +19,6 @@ interface CompletedTaskCardProps {
   task: CompletedTask;
   onUpdateStatus: (taskId: number, status: 'Paid' | 'Unpaid', isRejection?: boolean) => void;
   onSelect?: (taskId: number) => void;
-  isLoading?: boolean;
   isSelected?: boolean;
   newestTaskId?: number;
 }
@@ -28,24 +27,17 @@ export function CompletedTaskCard({
   task,
   onUpdateStatus,
   onSelect,
-  isLoading = false,
   isSelected = false,
   newestTaskId,
 }: CompletedTaskCardProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [actionType, setActionType] = useState<'Approve' | 'Reject' | null>(null);
-
-  const handleAction = (action: 'Approve' | 'Reject') => {
-    setActionType(action);
-    setIsDialogOpen(true);
-  };
 
   const confirmAction = async () => {
-    if (actionType) {
-      setIsDialogOpen(false);
-      const paymentStatus = 'Paid';
-      const isRejection = actionType === 'Reject';
-      onUpdateStatus(task.c_task_id, paymentStatus, isRejection);
+    setIsDialogOpen(false);
+    try {
+      await onUpdateStatus(task.c_task_id, 'Paid', false);
+    } catch (err) {
+      console.error('Error updating task:', err);
     }
   };
 
@@ -79,9 +71,7 @@ export function CompletedTaskCard({
               </div>
               <div>
                 <h3 className='font-medium text-foreground'>{task.task_title}</h3>
-                {task.comment && (
-                  <p className='text-sm text-muted-foreground'>{task.comment}</p>
-                )}
+                {task.comment && <p className='text-sm text-muted-foreground'>{task.comment}</p>}
               </div>
             </div>
             <div className='flex items-center space-x-4'>
@@ -111,11 +101,9 @@ export function CompletedTaskCard({
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className='bg-white'>
           <DialogHeader>
-            <DialogTitle>
-              {actionType === 'Approve' ? 'Approve Payment' : 'Reject Payment'}
-            </DialogTitle>
+            <DialogTitle>Approve Payment</DialogTitle>
             <DialogDescription>
-              Are you sure you want to {actionType?.toLowerCase()} this payment of{' '}
+              Are you sure you want to approve this payment of{' '}
               <CurrencyDisplay value={parseFloat(task.payout_value)} /> for {task.task_title}?
             </DialogDescription>
           </DialogHeader>
@@ -123,15 +111,8 @@ export function CompletedTaskCard({
             <Button variant='outline' onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
-            <Button
-              onClick={confirmAction}
-              className={
-                actionType === 'Approve'
-                  ? 'bg-green-500 hover:bg-green-600 text-white'
-                  : 'bg-red-500 hover:bg-red-600 text-white'
-              }
-            >
-              {actionType}
+            <Button onClick={confirmAction} className='bg-green-500 hover:bg-green-600 text-white'>
+              Approve
             </Button>
           </DialogFooter>
         </DialogContent>

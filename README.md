@@ -2,7 +2,7 @@
 
 Taschengeld is an allowance tracker application designed to help families manage chores, tasks, and allowances for children. It features a user-friendly interface for both parents and children to interact with.
 
-Taschengeld is the German word for "pocket money" and was developed for a family in Switzerland.  As a result, there are two German words, "Taschengeld" and "Sparkässeli" which means "Piggy-Bank".
+Taschengeld is the German word for "pocket money" and was developed for a family in Switzerland. As a result, there are two German words, "Taschengeld" and "Sparkässeli" which means "Piggy-Bank".
 
 A modern task management system built with Next.js, PostgreSQL, and Docker.
 
@@ -32,9 +32,11 @@ A modern task management system built with Next.js, PostgreSQL, and Docker.
 ## Prerequisites
 
 For Production:
+
 - Docker and Docker Compose
 
 For Development (software developers):
+
 - See [README_DEV.md](README_DEV.md)
 
 The rest of this document is for users of the application (AKA: "Production").
@@ -48,12 +50,14 @@ The rest of this document is for users of the application (AKA: "Production").
 ### Detailed Setup Steps
 
 1. Create a new directory for your Tgeld installation and database storage:
+
    ```bash
    mkdir tgeld && cd tgeld
    mkdir -p ./data/postgres
    ```
 
-2. Create a `.env` file with your configuration.  Copy the following into your .env:
+2. Create a `.env` file with your configuration. Copy the following into your .env:
+
    ```bash
    # Database
    POSTGRES_USER=postgres  #keep or change
@@ -65,13 +69,14 @@ The rest of this document is for users of the application (AKA: "Production").
    POSTGRES_DATA_DIR=./data/postgres  #change to your preferred backup location.  If you change this, be sure the folder/path exists before starting the container.
    ```
 
-3. Create a `docker-compose.yml` file with the following content.  Change only the ports if needed:
+3. Create a `docker-compose.yml` file with the following content. Change only the ports if needed:
+
    ```yaml
    services:
      app:
        image: tgeld/tgeld:latest
        ports:
-         - "8071:3000"  #change left number if port 8071 is already in use on your system (e.g., "8072:3000")
+         - '8071:3000' #change left number if port 8071 is already in use on your system (e.g., "8072:3000")
        environment:
          - DATABASE_URL=${DATABASE_URL}
        depends_on:
@@ -100,31 +105,41 @@ The application will be available at `http://localhost:8071` (or whichever port 
 ## Database Management
 
 ### Create a database backup:
+
 #### From outside the application:
+
 ```bash
 docker-compose exec db pg_dump -U postgres tgeld > backup.sql
 ```
+
 or
+
 #### From within the application:
-   - Click the Global App Settings icon found on the top right corner.
-   - Scroll to the Backup and Restore Section.
-   - Locate Full Database Backup and click the "Download" button.  Save file to your preferred location.
+
+- Click the Global App Settings icon found on the top right corner.
+- Scroll to the Backup and Restore Section.
+- Locate Full Database Backup and click the "Download" button. Save file to your preferred location.
 
 ### Restore a database backup:
+
 #### From outside the application:
+
 ```bash
 cat backup.sql | docker-compose exec -T db psql -U postgres -d tgeld
 ```
-or
-#### From within the application:
-   - Click the Global App Settings icon found on the top right corner.
-   - Scroll to the Backup and Restore Section.
-   - Locate Full Database Backup and click the "Upload" button.  Find the saved file to your preferred location.
 
+or
+
+#### From within the application:
+
+- Click the Global App Settings icon found on the top right corner.
+- Scroll to the Backup and Restore Section.
+- Locate Full Database Backup and click the "Upload" button. Find the saved file to your preferred location.
 
 ## Updating the Application
 
 To update to the latest version (Docker image):
+
 ```bash
 docker compose down    # Stop and remove existing containers
 docker compose pull   # Get the latest version of the image
@@ -132,10 +147,13 @@ docker compose up -d  # Start containers with the new version
 ```
 
 > **Note about disk space**: The update process keeps old versions of the images on your system. If you want to clean up old, unused images to free up disk space, you can run:
+
 ```bash
 docker image prune -f  # Remove unused images
 ```
+
 Or to see how much space can be freed first:
+
 ```bash
 docker image prune -f --dry-run  # Show what would be removed
 ```

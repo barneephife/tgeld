@@ -12,29 +12,34 @@ This guide is for developers who want to contribute to or modify the Taschengeld
 ## Development Setup
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/barneephife/tgeld.git
    cd tgeld
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
-3. Set up environment variables (for new developers only): 
+3. Set up environment variables (for new developers only):
+
    ```bash
    # Create your development environment file by copying the example
    cp .env.example .env.development
    ```
 
    Then edit `.env.development` and update the following values:
+
    - `DB_PASSWORD`: Set to your local PostgreSQL password
    - Adjust other values as needed for your development environment
 
    > **Note**: Never commit `.env.development` to version control or share it with other developers. Each developer should maintain their own local configuration.
 
 4. Initialize the database (for new developers or after schema changes):
+
    ```bash
    # Generate Prisma client (required after any schema changes)
    npx prisma generate
@@ -65,11 +70,13 @@ The application will be available at `http://localhost:3000`.
 ### Database Management
 
 Create a database backup:
+
 ```bash
 pg_dump -U postgres tgeld > dev_backup.sql
 ```
 
 Restore from backup:
+
 ```bash
 psql -U postgres -d tgeld < dev_backup.sql
 ```

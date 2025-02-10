@@ -5,6 +5,7 @@ import ClientLayout from 'components/client-layout';
 import { ToastProvider } from '@/components/ui/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { ModeProvider } from '@/components/context/mode-context';
+import { LanguageProvider } from '@/components/context/language-context';
 import { ThemeProvider } from '@/contexts/theme-context';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -20,9 +21,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={inter.className}>
         <ToastProvider>
           <ModeProvider>
-            <ThemeProvider>
-              <ClientLayout>{children}</ClientLayout>
-            </ThemeProvider>
+            <LanguageProvider>
+              <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
+                <ClientLayout>{children}</ClientLayout>
+              </ThemeProvider>
+            </LanguageProvider>
           </ModeProvider>
           <Toaster />
         </ToastProvider>

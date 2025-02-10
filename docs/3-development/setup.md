@@ -7,6 +7,7 @@ This guide covers the setup and workflow for developing the Tgeld Task Managemen
 ### Prerequisites
 
 1. **Required Software**
+
    - Node.js 18 or later
    - Docker (for production deployment only)
    - Git
@@ -22,22 +23,26 @@ This guide covers the setup and workflow for developing the Tgeld Task Managemen
 ### Initial Setup
 
 1. **Clone the Repository**
+
    ```bash
    git clone https://github.com/barneephife/tgeld.git
    cd tgeld
    ```
 
 2. **Install Dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Set Up Environment**
+
    ```bash
    cp .env.example .env
    ```
 
 4. **Generate Prisma Client**
+
    ```bash
    npx prisma generate
    ```
@@ -67,11 +72,13 @@ tgeld/
 #### Running Migrations
 
 1. Create a migration:
+
    ```bash
    npx prisma migrate dev --name description_of_change
    ```
 
 2. Apply migrations:
+
    ```bash
    npx prisma migrate deploy
    ```
@@ -84,6 +91,7 @@ tgeld/
 #### Working with Prisma Studio
 
 Launch Prisma Studio for database management:
+
 ```bash
 npx prisma studio
 ```
@@ -97,6 +105,7 @@ npx prisma studio
 3. Use Prisma client for database operations
 
 Example:
+
 ```typescript
 import { NextResponse } from 'next/server';
 import { taskRepository } from '@/app/lib/taskRepository';
@@ -106,10 +115,7 @@ export async function GET() {
     const tasks = await taskRepository.getAll();
     return NextResponse.json(tasks);
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to fetch tasks' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch tasks' }, { status: 500 });
   }
 }
 ```
@@ -190,6 +196,7 @@ docker-compose up -d
 #### Server-Side Debugging
 
 1. Add console logs:
+
    ```typescript
    console.log('Debug data:', data);
    ```
@@ -227,6 +234,7 @@ npm run format
 #### Pre-commit Hooks
 
 The project uses husky for pre-commit hooks:
+
 - Lint checking
 - Type checking
 - Unit tests
@@ -242,6 +250,7 @@ The project uses husky for pre-commit hooks:
 #### Commit Messages
 
 Follow conventional commits:
+
 ```
 feat: add task filtering
 fix: resolve task creation error
@@ -296,6 +305,7 @@ docker system df
 ```
 
 2. Make it executable:
+
 ```bash
 chmod +x scripts/docker-cleanup.sh
 ```
@@ -313,6 +323,7 @@ chmod +x scripts/docker-cleanup.sh
 ```
 
 Now cleanup will automatically run before each build, and you can manually run:
+
 - `npm run docker:cleanup` for basic cleanup
 - `npm run docker:cleanup:all` for full cleanup including unused images
 
@@ -321,26 +332,29 @@ Now cleanup will automatically run before each build, and you can manually run:
 ### Common Issues
 
 1. **Database Connection Issues**
+
    ```bash
    # Check database connection string in .env
    # Ensure PostgreSQL is running
    ```
 
 2. **Build Errors**
+
    ```bash
    # Clear Next.js cache
    rm -rf .next
-   
+
    # Rebuild node_modules
    rm -rf node_modules
    npm install
    ```
 
 3. **Prisma Issues**
+
    ```bash
    # Regenerate Prisma client
    npx prisma generate
-   
+
    # Reset database
    npx prisma migrate reset
    ```
@@ -348,16 +362,19 @@ Now cleanup will automatically run before each build, and you can manually run:
 ## Best Practices
 
 1. **Code Organization**
+
    - Keep components small and focused
    - Use TypeScript interfaces
    - Follow DRY principle
 
 2. **Performance**
+
    - Use proper React hooks
    - Optimize database queries
    - Implement caching where needed
 
 3. **Security**
+
    - Validate all inputs
    - Use proper error handling
    - Follow security best practices

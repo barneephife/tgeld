@@ -3,7 +3,7 @@
 import { useCurrency } from '@/hooks/useCurrency';
 
 interface CurrencyDisplayProps {
-  value: number;
+  value: number | string;
   className?: string;
   symbolPosition?: 'before' | 'after';
   locale?: string;
@@ -28,19 +28,25 @@ export function CurrencyDisplay({
 }: CurrencyDisplayProps) {
   const { currency, format, isLoading } = useCurrency();
 
+  // Convert value to number and handle invalid values
+  const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+  if (typeof numericValue !== 'number' || isNaN(numericValue)) {
+    return <span className={className}>0.00</span>;
+  }
+
   // Handle loading state
   if (isLoading) {
-    return <span className={className}>{value.toFixed(showZeroDecimals ? 2 : 0)}</span>;
+    return <span className={className}>{numericValue.toFixed(showZeroDecimals ? 2 : 0)}</span>;
   }
 
   // Handle no currency or 'none' selected
   if (!currency || currency === 'none') {
-    return <span className={className}>{value.toFixed(showZeroDecimals ? 2 : 0)}</span>;
+    return <span className={className}>{numericValue.toFixed(showZeroDecimals ? 2 : 0)}</span>;
   }
 
   // For currencies that use their code as symbol, always use code format
   if (CURRENCIES_WITHOUT_SYMBOL.includes(currency)) {
-    const formattedValue = value.toFixed(showZeroDecimals ? 2 : 0);
+    const formattedValue = numericValue.toFixed(showZeroDecimals ? 2 : 0);
     return (
       <span className={className}>
         {symbolPosition === 'before'
@@ -58,13 +64,13 @@ export function CurrencyDisplay({
           style: 'currency',
           currency: currency,
           minimumFractionDigits: showZeroDecimals ? 2 : 0,
-        }).format(value)}
+        }).format(numericValue)}
       </span>
     );
   }
 
   if (format === 'code') {
-    const formattedValue = value.toFixed(showZeroDecimals ? 2 : 0);
+    const formattedValue = numericValue.toFixed(showZeroDecimals ? 2 : 0);
     return (
       <span className={className}>
         {symbolPosition === 'before'
@@ -79,7 +85,7 @@ export function CurrencyDisplay({
     style: 'currency',
     currency: currency,
     minimumFractionDigits: showZeroDecimals ? 2 : 0,
-  }).format(value);
+  }).format(numericValue);
 
   return (
     <span className={className}>

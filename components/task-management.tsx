@@ -166,38 +166,33 @@ export function TaskManagement() {
     <div className='h-[calc(100vh-4rem)] flex flex-col bg-background'>
       {/* Fixed Header */}
       <div className='p-8 bg-background-secondary'>
-        {error && (
-          <div className='bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded relative mb-4'>
-            <span className='block sm:inline'>{error}</span>
-            <span
-              className='absolute top-0 bottom-0 right-0 px-4 py-3 cursor-pointer'
-              onClick={() => setError(null)}
-            >
-              ×
-            </span>
-          </div>
-        )}
-
-        <div className='flex justify-between items-center pb-6 border-b border-border'>
+        <div className='flex items-center justify-between pb-6 border-b border-border'>
           <div className='flex items-center space-x-4'>
             <ListTodo className='h-8 w-8 text-content-primary' />
             <h1 className='text-3xl font-medium text-content-primary'>Task Management</h1>
           </div>
-          <Button onClick={() => setIsAddModalOpen(true)} variant='default'>
+          <Button
+            onClick={() => setIsAddModalOpen(true)}
+            className='bg-black hover:bg-black/90 text-white'
+          >
             <Plus className='h-4 w-4 mr-2' />
             Add Task
           </Button>
         </div>
+      </div>
 
-        <div className='flex space-x-4 pt-6'>
+      {/* Scrollable Content */}
+      <div className='flex-1 overflow-y-auto p-8 pt-4 bg-background-secondary'>
+        {/* Filters */}
+        <div className='flex flex-wrap gap-4 items-center mb-6'>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className='w-40'>
               <SelectValue placeholder='Filter tasks' />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value='all'>All Tasks</SelectItem>
-              <SelectItem value='active'>Active</SelectItem>
-              <SelectItem value='inactive'>Inactive</SelectItem>
+              <SelectItem value='active'>Active Only</SelectItem>
+              <SelectItem value='inactive'>Inactive Only</SelectItem>
             </SelectContent>
           </Select>
           <Select value={sortBy} onValueChange={setSortBy}>
@@ -211,10 +206,8 @@ export function TaskManagement() {
             </SelectContent>
           </Select>
         </div>
-      </div>
 
-      {/* Scrollable Content */}
-      <div className='flex-1 overflow-y-auto p-8 pt-4 bg-background-secondary'>
+        {/* Task Grid */}
         <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'>
           {filteredAndSortedTasks.map((task) => (
             <Card
@@ -225,11 +218,11 @@ export function TaskManagement() {
                 task.is_active
                   ? [
                       'bg-blue-100/50 hover:bg-blue-200/50 border-blue-200',
-                      'dark:bg-blue-900/20 dark:hover:bg-blue-800/30 dark:border-blue-800'
+                      'dark:bg-blue-900/20 dark:hover:bg-blue-800/30 dark:border-blue-800',
                     ]
                   : [
                       'bg-gray-100/50 hover:bg-gray-200/50 border-gray-200',
-                      'dark:bg-gray-800/20 dark:hover:bg-gray-700/30 dark:border-gray-700'
+                      'dark:bg-gray-800/20 dark:hover:bg-gray-700/30 dark:border-gray-700',
                     ]
               )}
               onClick={() => {

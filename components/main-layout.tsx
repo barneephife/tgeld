@@ -8,7 +8,5 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({ children, className }: MainLayoutProps) {
-  return (
-    <main className={cn('flex-1 overflow-auto p-8 bg-background', className)}>{children}</main>
-  );
+  return <main className={cn('bg-background', className)}>{children}</main>;
 }
