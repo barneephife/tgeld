@@ -19,7 +19,7 @@ interface ModeContextType {
 const ModeContext = createContext<ModeContextType | undefined>(undefined);
 
 export function ModeProvider({ children }: { children: React.ReactNode }) {
-  const [enforceRoles, setEnforceRoles] = useState(true);
+  const [enforceRoles, setEnforceRolesState] = useState(true);
   const [isParentMode, setIsParentMode] = useState(true);
   const [pin, setPin] = useState<string | null>(null);
   const router = useRouter();
@@ -33,7 +33,7 @@ export function ModeProvider({ children }: { children: React.ReactNode }) {
         if (!response.ok) throw new Error('Failed to load settings');
         const settings = await response.json();
 
-        setEnforceRoles(settings.enforce_roles === 'true');
+        setEnforceRolesState(settings.enforce_roles === 'true');
         setPin(settings.global_pin);
         setIsInitialized(true);
       } catch (error) {
@@ -107,6 +107,25 @@ export function ModeProvider({ children }: { children: React.ReactNode }) {
       return true;
     }
   }, [isParentMode, enforceRoles, pin, verifyPin, router]);
+
+  const setEnforceRoles = async (value: boolean) => {
+    try {
+      // Update the database first
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'enforce_roles', value: value.toString() }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update settings');
+
+      // Only update state if database update was successful
+      setEnforceRolesState(value);
+    } catch (error) {
+      console.error('Error updating enforce roles setting:', error);
+      throw error;
+    }
+  };
 
   const value = {
     enforceRoles,

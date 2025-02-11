@@ -134,54 +134,50 @@ export function GlobalAppSettings() {
   const [loadingCurrency, setLoadingCurrency] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState<string>('symbol');
   const { showGermanTerms, setShowGermanTerms, settings } = useLanguage();
+  const [loadingLanguage, setLoadingLanguage] = useState(false);
 
-  useEffect(() => {
-    if (settings?.language === 'de') {
-      setShowGermanTerms(true);
-    } else {
-      setShowGermanTerms(false);
-    }
-  }, [settings?.language, setShowGermanTerms]);
-
+  // Load initial currency and format settings
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const [currencyResponse, formatResponse] = await Promise.all([
-          fetch('/api/settings/currency'),
-          fetch('/api/settings/currency-format'),
-        ]);
-
+        // Load currency
+        const currencyResponse = await fetch('/api/settings/currency');
         if (currencyResponse.ok) {
           const { currency } = await currencyResponse.json();
-          setSelectedCurrency(currency || 'CHF');
+          setSelectedCurrency(currency);
         }
 
+        // Load format
+        const formatResponse = await fetch('/api/settings/currency-format');
         if (formatResponse.ok) {
           const { format } = await formatResponse.json();
-          setSelectedFormat(format || 'symbol'); // Default to symbol if not set
+          setSelectedFormat(format || 'symbol');
         }
       } catch (error) {
         console.error('Failed to load settings:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load settings',
-          variant: 'destructive',
-        });
       }
     };
 
     loadSettings();
-  }, [toast]);
+  }, []);
 
-  const handleRoleEnforcementChange = (checked: boolean) => {
+  const handleRoleEnforcementChange = async (checked: boolean) => {
     if (!checked && enforceRoles) {
       setDisableRolesDialog(true);
     } else {
-      setEnforceRoles(checked);
-      toast({
-        title: 'Settings Updated',
-        description: `Parent/Child role enforcement is now ${checked ? 'enabled' : 'disabled'}`,
-      });
+      try {
+        await setEnforceRoles(checked);
+        toast({
+          title: 'Settings Updated',
+          description: `Parent/Child role enforcement is now ${checked ? 'enabled' : 'disabled'}`,
+        });
+      } catch (error) {
+        toast({
+          title: 'Update Failed',
+          description: 'Failed to update role enforcement setting. Please try again.',
+          variant: 'destructive',
+        });
+      }
     }
   };
 
@@ -261,25 +257,29 @@ export function GlobalAppSettings() {
       const response = await fetch('/api/settings/currency', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ currency: value === 'none' ? null : value }),
+        body: JSON.stringify({ currency: value }),
       });
 
-      if (!response.ok) throw new Error('Failed to update currency');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to update currency');
+      }
 
-      setSelectedCurrency(value);
+      const data = await response.json();
+      setSelectedCurrency(data.currency);
       toast({
         title: 'Currency Updated',
         description:
-          value === 'none'
+          data.currency === 'none'
             ? 'Default currency has been cleared'
-            : `Default currency has been set to ${value}`,
+            : `Default currency has been set to ${data.currency}`,
         variant: 'default',
       });
     } catch (error) {
       console.error('Failed to update currency:', error);
       toast({
         title: 'Update Failed',
-        description: 'Failed to update currency setting. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to update currency setting. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -535,20 +535,29 @@ export function GlobalAppSettings() {
   };
 
   const handleLanguageToggle = async () => {
+    setLoadingLanguage(true);
+    const newState = !showGermanTerms;
+    
     try {
-      const newValue = !showGermanTerms;
-      await setShowGermanTerms(newValue);
-      toast({
-        title: 'Settings Updated',
-        description: `Application terms will now be shown in ${newValue ? 'German' : 'English'}.`,
-      });
+      // Don't update UI until we know the database update succeeded
+      const success = await setShowGermanTerms(newState);
+      
+      if (success) {
+        toast({
+          title: 'Language Updated',
+          description: `Application terms will now be shown in ${newState ? 'German' : 'English'}.`,
+          variant: 'default',
+        });
+      }
     } catch (error) {
       console.error('Error saving language setting:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to update language setting.',
+        title: 'Update Failed',
+        description: 'Failed to update language setting. Please try again.',
         variant: 'destructive',
       });
+    } finally {
+      setLoadingLanguage(false);
     }
   };
 
@@ -563,10 +572,10 @@ export function GlobalAppSettings() {
       </div>
 
       {/* Scrollable Content */}
-      <div className='flex-1 overflow-y-auto p-8 pt-4 bg-background-secondary'>
+      <div className='flex-1 overflow-y-auto p-8 pt-4 bg-background'>
         <div className='space-y-8'>
           {/* Access Control Section */}
-          <section className='bg-background-primary rounded-2xl p-8 shadow-md border border-border transition-all duration-200 hover:shadow-lg w-full'>
+          <section className='bg-card dark:bg-[#2f3136] rounded-2xl p-8 shadow-[0_2px_4px_rgba(0,0,0,0.05)] dark:shadow-none border border-[#e3e5e8] dark:border-[#202225] transition-all duration-200 hover:shadow-[0_4px_8px_rgba(0,0,0,0.1)] dark:hover:shadow-none w-full'>
             <div className='flex items-center gap-4 mb-8'>
               <Shield className='h-6 w-6 text-content-primary' />
               <h2 className='text-xl font-medium text-content-primary'>Access Control</h2>
@@ -657,7 +666,7 @@ export function GlobalAppSettings() {
           </section>
 
           {/* Currency Section */}
-          <section className='bg-background-primary rounded-2xl p-8 shadow-md border border-border transition-all duration-200 hover:shadow-lg w-full'>
+          <section className='bg-card dark:bg-[#2f3136] rounded-2xl p-8 shadow-[0_2px_4px_rgba(0,0,0,0.05)] dark:shadow-none border border-[#e3e5e8] dark:border-[#202225] transition-all duration-200 hover:shadow-[0_4px_8px_rgba(0,0,0,0.1)] dark:hover:shadow-none w-full'>
             <div className='flex items-center gap-4 mb-8'>
               <Coins className='h-6 w-6 text-content-primary' />
               <h2 className='text-xl font-medium text-content-primary'>Currency</h2>
@@ -720,7 +729,7 @@ export function GlobalAppSettings() {
           </section>
 
           {/* Language Section */}
-          <section className='bg-background-primary rounded-2xl p-8 shadow-md border border-border transition-all duration-200 hover:shadow-lg w-full'>
+          <section className='bg-card dark:bg-[#2f3136] rounded-2xl p-8 shadow-[0_2px_4px_rgba(0,0,0,0.05)] dark:shadow-none border border-[#e3e5e8] dark:border-[#202225] transition-all duration-200 hover:shadow-[0_4px_8px_rgba(0,0,0,0.1)] dark:hover:shadow-none w-full'>
             <div className='flex items-center gap-4 mb-8'>
               <svg
                 className='h-6 w-6 text-content-primary'
@@ -745,14 +754,20 @@ export function GlobalAppSettings() {
                   </p>
                 </div>
                 <div className='mt-4'>
-                  <Switch checked={showGermanTerms} onCheckedChange={handleLanguageToggle} />
+                  <Switch
+                    id="language-toggle"
+                    checked={showGermanTerms}
+                    onCheckedChange={handleLanguageToggle}
+                    disabled={loadingLanguage}
+                    className="data-[state=checked]:bg-primary"
+                  />
                 </div>
               </div>
             </div>
           </section>
 
           {/* Backup and Restore Section */}
-          <section className='bg-background-primary rounded-2xl p-8 shadow-md border border-border transition-all duration-200 hover:shadow-lg w-full'>
+          <section className='bg-card dark:bg-[#2f3136] rounded-2xl p-8 shadow-[0_2px_4px_rgba(0,0,0,0.05)] dark:shadow-none border border-[#e3e5e8] dark:border-[#202225] transition-all duration-200 hover:shadow-[0_4px_8px_rgba(0,0,0,0.1)] dark:hover:shadow-none w-full'>
             <div className='flex items-center gap-4 mb-8'>
               <Save className='h-6 w-6 text-content-primary' />
               <h2 className='text-xl font-medium text-content-primary'>Backup and Restore</h2>
@@ -878,7 +893,7 @@ export function GlobalAppSettings() {
           </section>
 
           {/* Reset Options Section */}
-          <section className='bg-background-primary rounded-2xl p-8 shadow-md border border-border transition-all duration-200 hover:shadow-lg w-full'>
+          <section className='bg-card dark:bg-[#2f3136] rounded-2xl p-8 shadow-[0_2px_4px_rgba(0,0,0,0.05)] dark:shadow-none border border-[#e3e5e8] dark:border-[#202225] transition-all duration-200 hover:shadow-[0_4px_8px_rgba(0,0,0,0.1)] dark:hover:shadow-none w-full'>
             <div className='flex items-center gap-4 mb-8'>
               <RotateCcw className='h-6 w-6 text-content-primary' />
               <h2 className='text-xl font-medium text-content-primary'>Reset Options</h2>
