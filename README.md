@@ -26,8 +26,8 @@ A modern task management system built with Next.js, PostgreSQL, and Docker.
         Track account balances and transaction history
         Manually credit and debit accounts
 
-- Docker-based
-- PostgreSQL database for data persistence
+- 🐳 Docker-based
+- 🐘 PostgreSQL database for data persistence
 
 ## Prerequisites
 
@@ -126,6 +126,17 @@ Note: The multi-arch image ensures compatibility across different platforms with
    ```bash
    docker compose up -d
    ```
+
+5. (optional) To verify the container is running:
+   ```bash
+   docker compose ps
+   ```
+You should see something like this:
+```bash
+NAME          IMAGE                COMMAND                  SERVICE   CREATED          STATUS                             PORTS
+tgeld-app-1   tgeld/tgeld:latest   "./docker-entrypoint…"   app       15 seconds ago   Up 14 seconds (health: starting)   0.0.0.0:8071->3000/tcp, [::]:8071->3000/tcp
+tgeld-db-1    postgres:16-alpine   "docker-entrypoint.s…"   db        15 seconds ago   Up 14 seconds                      5432/tcp
+```
 
 The application will be available at `http://localhost:8071` (or whichever port you configured in `docker-compose.yml`).
 
