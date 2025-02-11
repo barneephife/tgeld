@@ -1,8 +1,14 @@
 services:
   app:
-    image: docker.io/barneephife/tgeld:latest
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
     ports:
-      - "21971:3000"
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/tgeld?schema=public
       - DB_USER=postgres
@@ -10,10 +16,11 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
       - DB_DATABASE=tgeld
-      - NODE_ENV=production
-      - NEXT_PUBLIC_PORT=21971
+      - NODE_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1
     depends_on:
       - db
+    command: sh -c "npm run dev -- -H 0.0.0.0"
 
   db:
     image: postgres:16-alpine
@@ -21,8 +28,10 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=tgeld
+    ports:
+      - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_dev_data:/var/lib/postgresql/data
 
 volumes:
-  postgres_data:
+  postgres_dev_data:

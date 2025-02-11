@@ -1,0 +1,27 @@
+FROM node:18-alpine
+
+# Install system dependencies
+RUN apk add --no-cache \
+    postgresql-client \
+    python3 \
+    make \
+    g++
+
+WORKDIR /app
+
+# Install dependencies only when needed
+COPY package*.json ./
+COPY prisma ./prisma/
+
+# Install all dependencies (including devDependencies)
+RUN npm install
+
+# Generate Prisma Client during build
+RUN npx prisma generate
+
+# Set development environment
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Start in development mode with hot reloading
+CMD ["npm", "run", "dev"]
