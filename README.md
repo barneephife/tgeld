@@ -41,6 +41,26 @@ For Development (software developers):
 
 The rest of this document is for users of the application (AKA: "Production").
 
+## Deployment
+
+### Docker Deployment
+
+The application is available as a multi-architecture Docker image that supports both ARM64 (Apple Silicon) and AMD64 (Intel/AMD) platforms. Docker will automatically select the correct version for your system.
+
+1. Pull the image:
+```bash
+docker pull tgeld/tgeld:latest
+```
+
+2. Run with Docker Compose:
+```bash
+docker compose up -d
+```
+
+The application will be available at `http://localhost:3000` (or your configured port).
+
+Note: The multi-arch image ensures compatibility across different platforms without any additional configuration.
+
 ## Quick Start
 
 1. Create directory structure
@@ -56,18 +76,29 @@ The rest of this document is for users of the application (AKA: "Production").
    mkdir -p ./data/postgres
    ```
 
-2. Create a `.env` file with your configuration. Copy the following into your .env:
+2. Create a `.env` file with your configuration. Copy and modify the following template:
 
    ```bash
    # Database
-   POSTGRES_USER=postgres  #keep or change
-   POSTGRES_PASSWORD=your_secure_password  #CHANGE THIS
-   POSTGRES_DB=tgeld  #keep or change
-   DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public  ##do not change
-
+   POSTGRES_USER=postgres
+   POSTGRES_PASSWORD=your_secure_password  # CHANGE THIS to a secure password
+   POSTGRES_DB=tgeld
+   
+   # IMPORTANT: Use direct values here, DO NOT use ${VAR} references
+   DATABASE_URL=postgresql://postgres:your_secure_password@db:5432/tgeld?schema=public
+   
    # Data directory for PostgreSQL (adjust path as needed)
-   POSTGRES_DATA_DIR=./data/postgres  #change to your preferred backup location.  If you change this, be sure the folder/path exists before starting the container.
+   POSTGRES_DATA_DIR=./data/postgres
    ```
+
+   **Important Notes:**
+   - Replace `your_secure_password` with your chosen password in BOTH places
+   - The DATABASE_URL must use direct values, not ${VAR} references
+   - Example of correct DATABASE_URL:
+     ```
+     DATABASE_URL=postgresql://postgres:MyPassword123@db:5432/tgeld?schema=public
+     ```
+   - Make sure the POSTGRES_DATA_DIR path exists before starting
 
 3. Create a `docker-compose.yml` file with the following content. Change only the ports if needed:
 

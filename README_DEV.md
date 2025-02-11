@@ -83,45 +83,51 @@ psql -U postgres -d tgeld < dev_backup.sql
 
 ## Building and Publishing Docker Images
 
-### 1. Building the Production Image
+### 1. Setting up Multi-Architecture Support
 
+First, create a builder that supports multi-platform builds:
 ```bash
-# Build the image
-docker build -f Dockerfile.prod -t tgeld/tgeld:latest .
-
-# Test the image locally (optional)
-docker compose -f docker-compose.test.yml up -d
+docker buildx create --name multiarch --driver docker-container --use
 ```
 
-### 2. Publishing to Docker Hub
+### 2. Building the Production Image
 
+Build a multi-arch image that supports both ARM64 (M1/M2 Macs) and AMD64 (Intel/AMD) platforms:
 ```bash
-# Log in to Docker Hub
-docker login
+# Build and push multi-arch image
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -f Dockerfile.prod \
+  -t tgeld/tgeld:latest \
+  . --push
+```
 
-# Push the image
-docker push tgeld/tgeld:latest
+To verify the supported architectures:
+```bash
+docker buildx imagetools inspect tgeld/tgeld:latest
 ```
 
 ### 3. Version Tagging (for releases)
 
+For release versions, tag the image with both latest and version number:
 ```bash
-# Tag the image with a version
-docker tag tgeld/tgeld:latest tgeld/tgeld:v1.x.x
-
-# Push the versioned tag
-docker push tgeld/tgeld:v1.x.x
+# Build and push with version tag
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -f Dockerfile.prod \
+  -t tgeld/tgeld:latest \
+  -t tgeld/tgeld:v1.x.x \
+  . --push
 ```
 
-### 4. Clean up Local Images
+### 4. Running Locally
 
+The image will automatically use the correct architecture for your system:
 ```bash
-# Remove unused images
-docker image prune -f
-
-# Remove all unused containers, networks, and images
-docker system prune -f
+docker compose up -d
 ```
+
+Note: The multi-arch image ensures compatibility across different platforms:
+- ARM64: Apple Silicon (M1/M2) Macs
+- AMD64: Intel/AMD machines and most cloud servers
 
 ## Project Structure
 
@@ -148,4 +154,72 @@ DATABASE_URL=postgresql://postgres:password@localhost:5432/tgeld?schema=public
 NODE_ENV=development
 ```
 
-**Important**: Never commit sensitive information like passwords or API keys to the repository. Always use environment variables for sensitive data.
+**Important Notes:**
+1. Never commit sensitive information like passwords or API keys to the repository.
+2. Always use environment variables for sensitive data.
+3. Do NOT set DATABASE_URL in `next.config.js`. This would override runtime environment variables in production.
+4. The production DATABASE_URL should point to the Docker container name (e.g., `db`) not `localhost`.
+
+## Docker Deployment Guidelines
+
+### Environment Variables in Docker
+
+1. Development vs Production:
+   - Development: Uses `.env.development` for local development
+   - Production: Uses environment variables from Docker Compose
+   - Never mix these configurations
+
+2. Database Connection:
+   - Development: Uses `localhost` or `127.0.0.1`
+   - Production: Uses Docker service name (`db`)
+   Example production URL:
+   ```
+   DATABASE_URL=postgresql://postgres:password@db:5432/tgeld?schema=public
+   ```
+
+### Prisma Configuration
+
+1. Binary Targets:
+   - The Dockerfile is configured to generate Prisma client with correct binary targets for Alpine Linux
+   - Do not modify these settings unless you understand the implications
+   - Required targets: `linux-musl` and `linux-musl-openssl-3.0.x`
+
+2. Client Generation:
+   - Always run `npx prisma generate` after schema changes
+   - The production build handles this automatically
+
+### Database Connection Management
+
+1. Connection Pooling:
+   - Use the singleton pool pattern in `db.ts`
+   - Never create new pools for each request
+   - Do not call `pool.end()` in API routes
+
+2. Error Handling:
+   - Always include error logging
+   - Handle connection failures gracefully
+   - Monitor connection pool metrics
+
+## Development Best Practices
+
+1. Environment Configuration:
+   - Always test with production-like settings locally
+   - Use Docker Compose to replicate production environment
+   - Verify environment variable handling in both contexts
+
+2. Code Changes:
+   - Test database connections thoroughly
+   - Verify API endpoints in Docker environment
+   - Monitor logs for connection issues
+
+3. Deployment Checklist:
+   - Build multi-arch Docker images
+   - Test on both ARM64 and AMD64 platforms
+   - Verify environment variables in production
+   - Monitor logs after deployment
+
+4. Common Pitfalls to Avoid:
+   - Setting DATABASE_URL in Next.js config
+   - Using localhost in production URLs
+   - Closing connection pools prematurely
+   - Missing error handling in database operations

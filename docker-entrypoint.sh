@@ -16,6 +16,10 @@ npx prisma generate
 echo "Running database migrations..."
 npx prisma migrate deploy
 
+# Initialize default data if needed
+echo "Checking and initializing default data..."
+node /app/scripts/initialize-data.js
+
 # Start the application
 echo "Starting the application..."
 exec node server.js -H 0.0.0.0

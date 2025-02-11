@@ -11,8 +11,8 @@ RUN apk add --no-cache postgresql-client
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install dependencies
-RUN npm ci
+# Install dependencies and sharp for image optimization
+RUN npm ci && npm install sharp
 
 # Copy source files
 COPY . .
@@ -21,13 +21,17 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV SKIP_ENV_VALIDATION=1
 ENV SKIP_CLEANUP=true
-ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?schema=public"
+
+# Generate Prisma Client during build with correct binary targets
+RUN npx prisma generate --generator client '{ "provider": "prisma-client-js", "binaryTargets": ["linux-musl", "linux-musl-openssl-3.0.x"] }'
 
 # Build application
 RUN npm run build
 
-# Remove dev dependencies and unnecessary packages
+# Remove dev dependencies and unnecessary packages, but keep sharp
 RUN npm prune --production && \
+    npm install sharp && \
     rm -rf node_modules/@types && \
     rm -rf node_modules/typescript && \
     rm -rf node_modules/prettier && \
@@ -56,11 +60,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 
+# Copy initialization script
+COPY --chown=nextjs:nodejs scripts/initialize-data.js ./scripts/initialize-data.js
+
 # Switch to non-root user
 USER nextjs
-
-# Generate Prisma client
-RUN npx prisma generate
 
 # Add healthcheck
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \

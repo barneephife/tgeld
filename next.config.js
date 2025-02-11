@@ -28,10 +28,6 @@ const nextConfig = {
   },
   // Disable static exports for API routes
   staticPageGenerationTimeout: 0,
-  env: {
-    // Add dummy database URL for build time
-    DATABASE_URL: process.env.DATABASE_URL || 'postgresql://dummy:dummy@localhost:5432/dummy',
-  },
 };
 
 module.exports = nextConfig;

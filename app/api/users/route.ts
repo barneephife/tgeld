@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { userRepository } from '@/app/lib/userRepository';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const users = await userRepository.getAll();
