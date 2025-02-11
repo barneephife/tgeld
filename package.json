@@ -12,7 +12,9 @@
     "check": "tsc --noEmit && npm run lint:dir && npm run format",
     "docker:cleanup": "scripts/docker-cleanup.sh",
     "docker:cleanup:all": "scripts/docker-cleanup.sh --all",
-    "prebuild": "test \"$SKIP_CLEANUP\" = \"true\" || npm run docker:cleanup"
+    "prebuild": "test \"$SKIP_CLEANUP\" = \"true\" || npm run docker:cleanup",
+    "dev:docker": "docker compose -f docker-compose.dev.yml up --build",
+    "dev:docker:clean": "docker compose -f docker-compose.dev.yml down -v && npm run dev:docker"
   },
   "dependencies": {
     "@heroicons/react": "^2.1.5",

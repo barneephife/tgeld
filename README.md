@@ -140,7 +140,7 @@ The application will be available at `http://localhost:8071` (or whichever port 
 #### From outside the application:
 
 ```bash
-docker-compose exec db pg_dump -U postgres tgeld > backup.sql
+docker compose exec db pg_dump -U postgres tgeld > backup.sql
 ```
 
 or
@@ -156,7 +156,7 @@ or
 #### From outside the application:
 
 ```bash
-cat backup.sql | docker-compose exec -T db psql -U postgres -d tgeld
+cat backup.sql | docker compose exec -T db psql -U postgres -d tgeld
 ```
 
 or
