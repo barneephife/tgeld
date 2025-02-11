@@ -30,3 +30,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to update language setting' }, { status: 500 });
   }
 }
+
+export async function onError(error: Error) {
+  console.error('Error occurred in language route:', error);
+  return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+}

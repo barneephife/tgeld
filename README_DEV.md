@@ -246,7 +246,7 @@ For release versions, tag the image with both latest and version number:
 docker buildx build --platform linux/amd64,linux/arm64 \
   -f Dockerfile.prod \
   -t tgeld/tgeld:latest \
-  -t tgeld/tgeld:v1.x.x \
+  -t tgeld/tgeld:v1.2.x \
   . --push
 ```
 

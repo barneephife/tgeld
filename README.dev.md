@@ -51,6 +51,54 @@ This guide explains how to set up and use the development environment for the Tg
    - `npm run dev:docker:clean` - Complete reset of development environment
    - Check logs: `docker compose -f docker-compose.dev.yml logs -f app`
 
+5. **Production Testing**
+
+Before deploying to production or merging changes:
+
+1. Build and test the production image locally:
+   ```bash
+   # Build production image
+   docker build -f Dockerfile.prod -t tgeld:latest .
+
+   # Stop development environment
+   docker compose down
+
+   # Test with production setup
+   docker compose -f docker-compose.yml up -d
+   ```
+
+2. Test with a clean database state:
+   ```bash
+   # Remove all volumes and start fresh
+   docker compose down -v
+   docker compose up -d
+   ```
+   
+   Verify that:
+   - All tables are created correctly
+   - Initial data is populated
+   - Settings are properly initialized
+   - API endpoints work as expected
+
+3. Test all major features:
+   - User management
+   - Task completion
+   - Settings changes
+   - Role enforcement
+   - Language switching
+   - Currency settings
+
+4. Build multi-architecture images:
+   ```bash
+   # Set up buildx
+   docker buildx create --use
+
+   # Build and test for both architectures
+   ./scripts/build-multiarch.sh
+   ```
+
+This process helps catch issues that might only appear in production before they affect users.
+
 ## Key Differences from Production
 
 - Hot reloading enabled
