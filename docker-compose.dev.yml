@@ -1,37 +1,65 @@
 services:
   app:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile.dev
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
     volumes:
       - .:/app
       - /app/node_modules
       - /app/.next
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/tgeld?schema=public
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_DATABASE=tgeld
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD}@${DB_HOST:-db}:${DB_PORT:-5432}/${DB_DATABASE:-tgeld}?schema=public
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST:-db}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_DATABASE=${DB_DATABASE:-tgeld}
       - NODE_ENV=development
       - NEXT_TELEMETRY_DISABLED=1
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     command: sh -c "npm run dev -- -H 0.0.0.0"
+    labels:
+      - "com.tgeld.service=app"
+      - "com.tgeld.environment=development"
 
   db:
     image: postgres:16-alpine
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=tgeld
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_DATABASE:-tgeld}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
-      - postgres_dev_data:/var/lib/postgresql/data
+      - type: volume
+        source: postgres_dev_data
+        target: /var/lib/postgresql/data
+        labels:
+          - "com.tgeld.data=postgres"
+          - "com.tgeld.environment=development"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_DATABASE:-tgeld}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    labels:
+      - "com.tgeld.service=database"
+      - "com.tgeld.environment=development"
 
 volumes:
   postgres_dev_data:
+    labels:
+      - "com.tgeld.data=postgres"
+      - "com.tgeld.environment=development"
+      - "com.tgeld.backup=required"

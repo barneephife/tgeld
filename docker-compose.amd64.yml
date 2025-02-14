@@ -1,5 +1,14 @@
 services:
   app:
     platform: linux/amd64
+    build:
+      args:
+        BUILDPLATFORM: linux/amd64
+        TARGETPLATFORM: linux/amd64
+    labels:
+      - "com.tgeld.architecture=amd64"
+
   db:
     platform: linux/amd64
+    labels:
+      - "com.tgeld.architecture=amd64"

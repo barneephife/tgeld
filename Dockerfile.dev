@@ -5,7 +5,9 @@ RUN apk add --no-cache \
     postgresql-client \
     python3 \
     make \
-    g++
+    g++ \
+    wget \
+    curl
 
 WORKDIR /app
 
@@ -16,12 +18,22 @@ COPY prisma ./prisma/
 # Install all dependencies (including devDependencies)
 RUN npm install
 
-# Generate Prisma Client during build
-RUN npx prisma generate
+# Generate Prisma Client during build with correct binary targets
+RUN npx prisma generate --generator client '{ "provider": "prisma-client-js", "binaryTargets": ["linux-musl", "linux-musl-openssl-3.0.x"] }'
+
+# Create upload directory with correct permissions
+RUN mkdir -p /app/uploads && chmod 777 /app/uploads
 
 # Set development environment
 ENV NODE_ENV=development
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Expose default port
+EXPOSE 3000
+
+# Health check configuration
+HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+
 # Start in development mode with hot reloading
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "dev", "--", "-H", "0.0.0.0"]

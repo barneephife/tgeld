@@ -4,8 +4,12 @@ FROM node:18-alpine AS builder
 # Install dependencies only when needed
 WORKDIR /app
 
-# Install PostgreSQL client and build dependencies
-RUN apk add --no-cache postgresql-client
+# Install build dependencies
+RUN apk add --no-cache \
+    postgresql-client \
+    python3 \
+    make \
+    g++
 
 # Copy package files
 COPY package*.json ./
@@ -44,7 +48,10 @@ RUN npm prune --production && \
 FROM node:18-alpine AS runner
 
 # Install only the necessary system packages and create user
-RUN apk add --no-cache postgresql-client && \
+RUN apk add --no-cache \
+    postgresql-client \
+    wget \
+    curl && \
     addgroup -S -g 1001 nodejs && \
     adduser -S -u 1001 -G nodejs nextjs && \
     mkdir -p /app/uploads && \
@@ -66,12 +73,13 @@ COPY --chown=nextjs:nodejs scripts/initialize-data.js ./scripts/initialize-data.
 # Switch to non-root user
 USER nextjs
 
-# Add healthcheck
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD pg_isready -h $DB_HOST -p $DB_PORT -U $DB_USER || exit 1
+# Add application and database healthchecks
+HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
 ENV NODE_ENV=production
 ENV PORT=3000
+ENV NEXT_TELEMETRY_DISABLED=1
 
 EXPOSE 3000
 

@@ -12,7 +12,7 @@ __tests__/
 **/*.test.*
 **/*.spec.*
 
-# Next.js
+# Next.js build output
 .next/
 out/
 .swc/
@@ -34,21 +34,22 @@ logs/
 .editorconfig
 *.md
 !README.md
+!README_DEV.md
+!docs/*.md
 .cursorrules
 .DS_Store
 ._*
 Thumbs.db
-switch-mode.sh
 
 # Environment
 .env
 .env.*
 !.env.example
 
-# Docker
-Dockerfile*
-docker-compose*.yml
-.dockerignore
+# Docker - allow all Docker files for multi-arch builds
+!Dockerfile*
+!docker-compose*.yml
+!docker-entrypoint.sh
 
 # Build and cache
 dist/
@@ -64,20 +65,13 @@ temp/
 *.tmp
 *.bak
 
-# Database
-*.sql
-*.sqlite
-*.sqlite3
-*.db
-*.backup
-*_backup*
-schema_*.sql
+# Database - allow initialization and migration scripts
+!prisma/
+!db/init.sql
+!db/migrations/
 
-# Documentation
-docs/
-CHANGELOG.md
-LICENSE
-CONTRIBUTING.md
+# Documentation - allow specific docs
+!docs/docker-development-principles.md
 
 # Assets source files
 **/*.sketch
@@ -92,3 +86,6 @@ CONTRIBUTING.md
 *.flv
 *.mov
 *.wmv
+
+# Uploads directory - managed by Docker volumes
+uploads/

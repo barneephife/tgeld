@@ -1,28 +1,58 @@
 services:
   app:
-    image: docker.io/barneephife/tgeld:latest
+    image: tgeld:prod-test
     ports:
-      - "21971:3000"
+      - "${PORT:-3000}:3000"
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/tgeld?schema=public
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_DATABASE=tgeld
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD}@${DB_HOST:-db}:${DB_PORT:-5432}/${DB_DATABASE:-tgeld}?schema=public
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST:-db}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_DATABASE=${DB_DATABASE:-tgeld}
       - NODE_ENV=production
-      - NEXT_PUBLIC_PORT=21971
+      - NEXT_TELEMETRY_DISABLED=1
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    labels:
+      - "com.tgeld.service=app"
+      - "com.tgeld.environment=production"
 
   db:
     image: postgres:16-alpine
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=tgeld
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_DATABASE:-tgeld}
+    ports:
+      - "${DB_PORT:-5432}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - type: volume
+        source: postgres_prod_data
+        target: /var/lib/postgresql/data
+        labels:
+          - "com.tgeld.data=postgres"
+          - "com.tgeld.environment=production"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_DATABASE:-tgeld}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    labels:
+      - "com.tgeld.service=database"
+      - "com.tgeld.environment=production"
 
 volumes:
-  postgres_data:
+  postgres_prod_data:
+    labels:
+      - "com.tgeld.data=postgres"
+      - "com.tgeld.environment=production"
+      - "com.tgeld.backup=required"
