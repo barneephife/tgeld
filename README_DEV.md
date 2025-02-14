@@ -1,22 +1,15 @@
 # Taschengeld Family Allowance Application - Developer Guide
 
-This guide is for developers who want to contribute to or modify the Taschengeld application.
+This guide provides step-by-step instructions for the development workflow. For detailed architecture decisions and principles, see `docs/docker-development-principles.md`.
 
 ## Development Prerequisites
 
-- Docker and Docker Compose
+- Docker Desktop with BuildKit support
 - Git
 - Node.js 18+ (for local tooling only)
-- PostgreSQL 16 (for local tooling only)
+- MacOS with M1/ARM64 architecture
 
-## Development Philosophy
-
-We follow a Docker-first development approach to ensure consistency between development and production environments. This means:
-- Always develop and test in Docker
-- Use the same configuration and processes as production
-- Catch deployment issues early in the development cycle
-
-## Development Setup
+## Quick Start
 
 1. Clone the repository:
    ```bash
@@ -31,446 +24,261 @@ We follow a Docker-first development approach to ensure consistency between deve
 
 3. Copy environment files:
    ```bash
-   # For Docker development
    cp .env.example .env
-
-   # For local tooling (migrations, etc)
-   cp .env.example .env.development
    ```
 
-   Edit `.env` and `.env.development` as needed. The Docker environment uses `db` as the database host, while local tooling uses `localhost`.
+   Configure your environment file:
+   ```bash
+   # Required settings for development
+   DB_HOST=db                    # Use Docker service name
+   DB_PASSWORD=your_secure_pass  # Set a secure password
+   NODE_ENV=development
+   ```
 
 ## Development Workflow
 
-### 1. Starting the Development Environment
-
-Always use Docker for development:
+### 1. Start Development Environment
 ```bash
-# Build the latest image
-docker build -f Dockerfile.prod -t tgeld:latest .
-
 # Start the development stack
-docker compose up
+docker compose -f docker-compose.dev.yml up --build
 ```
 
-The application will be available at `http://localhost:21971`.
+✅ Verify:
+- Application runs at http://localhost:3000
+- Database connection is successful
+- No architecture-related errors in logs
 
-### 2. Making Changes
+### 2. Make and Test Changes
+Your local changes will automatically reflect due to volume mounting and hot reloading.
 
-1. Edit code as needed
-2. Rebuild and restart to test changes:
-   ```bash
-   docker build -f Dockerfile.prod -t tgeld:latest .
-   docker compose restart app
-   ```
+When adding new dependencies:
+```bash
+# Add dependency
+npm install new-package
+
+# Rebuild to verify it works in Docker
+docker compose -f docker-compose.dev.yml down
+docker compose -f docker-compose.dev.yml up --build
+```
+
+✅ Verify:
+- New features work as expected
+- No new architecture-specific dependencies added
+- All API endpoints function correctly
+- Database operations work properly
 
 ### 3. Database Changes
-
 When making database changes:
 
-1. Create a new migration:
+1. Create migration:
    ```bash
-   # Create migration (using local tooling)
    npx prisma migrate dev --create-only --name descriptive_name
    ```
 
-2. Review the generated migration in `prisma/migrations`
+2. Review migration in `prisma/migrations`
 
-3. Test the migration in Docker:
+3. Test in Docker:
    ```bash
-   # Rebuild with new migration
-   docker build -f Dockerfile.prod -t tgeld:latest .
-   docker compose up --force-recreate
+   docker compose -f docker-compose.dev.yml down
+   docker compose -f docker-compose.dev.yml up --build
    ```
 
-4. If the migration works, commit both the schema and migration files
+✅ Verify:
+- Migration applies successfully
+- Data model works as expected
+- No data loss or corruption
 
-### 4. Troubleshooting
+### 4. Commit Changes
+```bash
+git add .
+git commit -m "descriptive message"
+git push
+```
 
-If you encounter issues:
+✅ Verify:
+- All necessary files included
+- No sensitive data in commit
+- Documentation updated if needed
 
-1. Check Docker logs:
-   ```bash
-   docker compose logs -f app
-   docker compose logs -f db
-   ```
+### 5. Build Production Image
+```bash
+# Build and test both architectures locally
+docker buildx build --platform linux/amd64 -f Dockerfile.prod -t tgeld:amd64-test . --load
+docker buildx build --platform linux/arm64 -f Dockerfile.prod -t tgeld:arm64-test . --load
 
-2. Verify database state:
-   ```bash
-   # Connect to database
-   docker compose exec db psql -U postgres -d tgeld
-   ```
+# Test the builds
+docker compose -f docker-compose.yml up
+```
 
-3. Reset if needed:
-   ```bash
-   docker compose down -v  # Removes volumes
-   docker compose up      # Fresh start
-   ```
+✅ Verify:
+- Builds succeed for both architectures
+- All features work in production build
+- No development dependencies included
+- Environment variables properly set
 
-## Why Docker-First Development?
+### 6. Push to Docker Hub
+```bash
+# Build and push multi-arch image
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -f Dockerfile.prod \
+  -t barneephife/tgeld:latest \
+  --push .
+```
 
-1. **Environment Parity**
-   - Development matches production exactly
-   - No "works on my machine" issues
-   - All developers use the same setup
+✅ Verify:
+- Both architecture variants pushed successfully
+- Tags are correct
+- Image can be pulled and run on different architectures
 
-2. **Early Problem Detection**
-   - Docker-specific issues found immediately
-   - Database migration issues caught early
-   - Configuration problems visible during development
+## Troubleshooting
 
-3. **Simplified Deployment**
-   - Same process from development to production
-   - Tested container configuration
-   - Verified environment variables
+### Check Logs
+```bash
+docker compose -f docker-compose.dev.yml logs -f app
+docker compose -f docker-compose.dev.yml logs -f db
+```
+
+### Verify Database
+```bash
+docker compose -f docker-compose.dev.yml exec db psql -U postgres -d tgeld
+```
+
+### Reset Environment
+```bash
+docker compose -f docker-compose.dev.yml down -v
+docker compose -f docker-compose.dev.yml up --build
+```
+
+For more detailed information about architecture decisions, risk areas, and design principles, please refer to `docs/docker-development-principles.md`.
+
+## Development vs Production
+
+### Development Environment
+
+- Uses hot reloading for rapid development
+- Mounts source code as volume
+- Runs with development tools and debugging enabled
+- Uses development-specific environment variables
+
+### Production Build
+
+- Multi-stage build process
+- Optimized for production
+- No source code access or development tools
+- Supports both ARM64 and AMD64 architectures
+
+## Best Practices
+
+1. **Always Use Docker for Development**
+   - Don't rely on local-only testing
+   - Always verify changes in Docker environment
+   - Use development compose file for all testing
+
+2. **Migration Management**
+   - Create explicit migrations using local tooling
+   - Test migrations in Docker environment
+   - Never rely on automatic migrations
+   - Always version control your migrations
+
+3. **Environment Variables**
+   - Use `.env` for development configuration
+   - Never commit any `.env` files
+   - Keep passwords and secrets secure
+
+4. **Testing**
+   - Test frequently in development environment
+   - Always test production builds before pushing
+   - Verify features work identically in both environments
+   - Check logs for potential issues
+
+## Project Structure
+
+```bash
+tgeld/
+├── app/                      # Next.js app directory
+├── components/              # React components
+├── prisma/                  # Database schema and migrations
+├── public/                  # Static assets
+├── styles/                  # CSS styles
+├── Dockerfile.dev          # Development configuration
+├── Dockerfile.prod         # Production configuration
+├── docker-compose.dev.yml  # Development environment
+└── docker-compose.yml      # Production environment
+```
+
+Remember: The goal is to ensure that any feature working in development will work identically in production. Always test production builds before pushing changes.
 
 ## Local Tooling (When Needed)
 
 While development happens in Docker, some tasks require local tooling:
 
 1. **Creating Migrations**
+
    ```bash
    # Use local environment
    export $(cat .env.development | xargs)
-   npx prisma migrate dev --create-only
+   npx prisma migrate dev --create-only --name your_migration_name
    ```
 
-2. **Generating Prisma Client**
+2. **Database Management**
+
    ```bash
-   npx prisma generate
+   # Reset development database
+   docker compose -f docker-compose.dev.yml down -v
+   docker compose -f docker-compose.dev.yml up --build
    ```
 
-3. **Database Management**
+Remember: Local tooling is only for creating migrations. All testing and verification should be done in Docker.
+
+## Building Docker Images
+
+### Development Images
+
+For local development, the image is built automatically:
+
+```bash
+# Start development environment (includes build)
+docker compose -f docker-compose.dev.yml up --build
+```
+
+### Production Images
+
+Production builds are handled by the CI/CD pipeline, but can be tested locally:
+
+1. **Build Production Image**
+
    ```bash
-   # Reset local database (if needed)
-   npx prisma migrate reset
+   # Build for your local architecture
+   docker build -f Dockerfile.prod -t tgeld:prod-test .
+
+   # Test the production build
+   docker compose -f docker-compose.prod.yml up
    ```
 
-Remember: Local tooling is for development tasks only. Always test changes in Docker before committing.
+2. **Multi-Architecture Builds** (if needed)
 
-## Best Practices
-
-1. **Never Skip Docker Testing**
-   - Don't rely on local-only testing
-   - Always verify in Docker before committing
-   - Use the same Docker configuration as production
-
-2. **Migration Management**
-   - Create explicit migrations
-   - Test migrations in Docker
-   - Never rely on automatic migrations
-
-3. **Environment Variables**
-   - Keep Docker and local configs separate
-   - Use appropriate database hosts
-   - Never commit sensitive values
-
-4. **Continuous Testing**
-   - Test frequently in Docker
-   - Verify all database changes
-   - Check logs for potential issues
-
-## Environment Configuration
-
-We maintain two distinct environment configurations:
-
-### Development Environment
-```env
-# Database Configuration (Local Development)
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=your_local_password
-DB_DATABASE=tgeld
-
-# Database URL for Prisma (Local Development)
-DATABASE_URL=postgresql://postgres:your_local_password@localhost:5432/tgeld?schema=public
-```
-
-### Production Environment (Docker)
-```env
-# Database Configuration (Docker)
-DB_HOST=db
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=tgeld_secure_password_2024
-DB_DATABASE=tgeld
-
-# Database URL for Prisma (Docker)
-DATABASE_URL=postgresql://postgres:tgeld_secure_password_2024@db:5432/tgeld?schema=public
-```
-
-## Project Structure
-
-```
-tgeld/
-├── app/                  # Next.js app directory
-├── components/           # React components
-├── prisma/              # Database schema and migrations
-├── public/              # Static assets
-├── styles/              # CSS styles
-├── Dockerfile.prod      # Production Docker configuration
-└── docker-compose.yml   # Development Docker configuration
-```
-
-## Building and Publishing Docker Images
-
-### 1. Setting up Multi-Architecture Support
-
-First, create a builder that supports multi-platform builds:
-```bash
-docker buildx create --name multiarch --driver docker-container --use
-```
-
-### 2. Building the Production Image
-
-Build a multi-arch image that supports both ARM64 (M1/M2 Macs) and AMD64 (Intel/AMD) platforms:
-```bash
-# Build and push multi-arch image
-docker buildx build --platform linux/amd64,linux/arm64 \
-  -f Dockerfile.prod \
-  -t tgeld/tgeld:latest \
-  . --push
-```
-
-To verify the supported architectures:
-```bash
-docker buildx imagetools inspect tgeld/tgeld:latest
-```
-
-### 3. Version Tagging (for releases)
-
-For release versions, tag the image with both latest and version number:
-```bash
-# Build and push with version tag
-docker buildx build --platform linux/amd64,linux/arm64 \
-  -f Dockerfile.prod \
-  -t tgeld/tgeld:latest \
-  -t tgeld/tgeld:v1.2.x \
-  . --push
-```
-
-### 4. Running Locally
-
-The image will automatically use the correct architecture for your system:
-```bash
-docker compose up -d
-```
-
-Note: The multi-arch image ensures compatibility across different platforms:
-- ARM64: Apple Silicon (M1/M2) Macs
-- AMD64: Intel/AMD machines and most cloud servers
-
-## Multi-Architecture Support (ARM64 and AMD64)
-
-### Building Multi-Architecture Images
-
-To support both M1 Macs (ARM64) and traditional machines (AMD64):
-
-1. **Enable BuildKit**
    ```bash
-   export DOCKER_BUILDKIT=1
-   ```
-
-2. **Create and Use Build Platform**
-   ```bash
-   # Create a multi-platform builder
+   # Create multi-arch builder
    docker buildx create --name multiarch --driver docker-container --use
-   
-   # Verify it's ready
-   docker buildx inspect --bootstrap
-   ```
 
-3. **Build Multi-Architecture Image**
-   ```bash
-   # Build for both ARM64 and AMD64
+   # Build for multiple architectures
    docker buildx build \
      --platform linux/amd64,linux/arm64 \
      -f Dockerfile.prod \
      -t tgeld:latest \
-     --push .
+     .
    ```
 
-### Development Workflow with Multi-Architecture
+Note: Multi-architecture builds are typically handled by CI/CD and are not needed for local development.
 
-1. **Local Development (M1 Mac)**
-   ```bash
-   # Use ARM64 for local development
-   docker compose up
-   ```
+## Architecture Support
 
-2. **Testing Different Architectures**
-   ```bash
-   # Test AMD64 version on M1
-   docker compose -f docker-compose.yml -f docker-compose.amd64.yml up
-   ```
+The development environment automatically uses your local architecture:
 
-3. **Production Deployment**
-   - The multi-arch image will automatically use:
-     - ARM64 on M1/M2 Macs
-     - AMD64 on traditional servers
+- ARM64 (Apple Silicon M1/M2 Macs)
+- AMD64 (Intel/AMD machines)
 
-### Architecture-Specific docker-compose Files
-
-1. **docker-compose.yml** (Base configuration)
-   ```yaml
-   services:
-     app:
-       image: tgeld:latest
-       # ... common configuration
-   ```
-
-2. **docker-compose.arm64.yml** (M1/M2 Mac specific)
-   ```yaml
-   services:
-     app:
-       platform: linux/arm64
-     db:
-       platform: linux/arm64
-   ```
-
-3. **docker-compose.amd64.yml** (Traditional machines)
-   ```yaml
-   services:
-     app:
-       platform: linux/amd64
-     db:
-       platform: linux/amd64
-   ```
-
-### Best Practices for Multi-Architecture Support
-
-1. **Always Test Both Architectures**
-   - Test on your native architecture first
-   - Cross-test on the other architecture
-   - Use CI/CD for thorough testing
-
-2. **Version Control**
-   - Tag images with version and architecture
-   - Use semantic versioning
-   - Keep architecture-specific fixes documented
-
-3. **Performance Optimization**
-   - Use native architecture when possible
-   - Be aware of emulation overhead
-   - Monitor resource usage
-
-4. **Troubleshooting**
-   ```bash
-   # Check image architecture
-   docker inspect tgeld:latest | grep Architecture
-
-   # Check available platforms
-   docker manifest inspect tgeld:latest
-
-   # Force specific platform
-   docker run --platform linux/amd64 tgeld:latest
-   ```
-
-Remember: The goal is to provide a seamless development experience regardless of the developer's platform while ensuring production reliability.
-
-## Cross-Platform Development
-
-This project supports development on any platform (Windows, macOS, Linux) using our multi-architecture Docker setup.
-
-### Quick Start
-
-1. **Build Multi-Architecture Image**
-   ```bash
-   # Build locally
-   ./scripts/build-multiarch.sh
-
-   # Build and push to Docker Hub
-   ./scripts/build-multiarch.sh --push --tag v1.0.0
-   ```
-
-2. **Development on Different Platforms**
-
-   a. **M1/M2 Mac (ARM64)**
-   ```bash
-   docker compose -f docker-compose.yml -f docker-compose.arm64.yml up
-   ```
-
-   b. **Windows/Intel Mac (AMD64)**
-   ```bash
-   docker compose -f docker-compose.yml -f docker-compose.amd64.yml up
-   ```
-
-### Platform-Specific Notes
-
-1. **Windows**
-   - Use WSL2 for best performance
-   - Enable BuildKit in Docker Desktop
-   - Use PowerShell or WSL terminal
-
-2. **M1/M2 Mac**
-   - Native ARM64 support
-   - Can run AMD64 via emulation
-   - Better performance with ARM64 images
-
-3. **Intel Mac/Linux**
-   - Native AMD64 support
-   - Can run ARM64 via emulation
-   - Better performance with AMD64 images
-
-### Testing Across Architectures
-
-1. **Local Testing**
-   ```bash
-   # Test AMD64 version (even on M1 Mac)
-   docker compose -f docker-compose.yml -f docker-compose.amd64.yml up
-
-   # Test ARM64 version (even on Intel machines)
-   docker compose -f docker-compose.yml -f docker-compose.arm64.yml up
-   ```
-
-2. **Production Testing**
-   ```bash
-   # Pull multi-arch image (automatically selects correct architecture)
-   docker pull barneephife/tgeld:latest
-
-   # Force specific architecture
-   docker pull --platform linux/amd64 barneephife/tgeld:latest
-   docker pull --platform linux/arm64 barneephife/tgeld:latest
-   ```
-
-### CI/CD Pipeline
-
-Our CI/CD pipeline builds and tests both architectures:
-1. Builds multi-arch images
-2. Tests on both ARM64 and AMD64
-3. Pushes verified images to Docker Hub
-
-### Best Practices
-
-1. **Always Test Both Architectures**
-   - Test on your native architecture first
-   - Cross-test on the other architecture
-   - Use CI/CD for thorough testing
-
-2. **Version Control**
-   - Tag images with version and architecture
-   - Use semantic versioning
-   - Keep architecture-specific fixes documented
-
-3. **Performance Optimization**
-   - Use native architecture when possible
-   - Be aware of emulation overhead
-   - Monitor resource usage
-
-4. **Troubleshooting**
-   ```bash
-   # Check image architecture
-   docker inspect barneephife/tgeld:latest | grep Architecture
-
-   # Check available platforms
-   docker manifest inspect barneephife/tgeld:latest
-
-   # Force specific platform
-   docker run --platform linux/amd64 barneephife/tgeld:latest
-   ```
-
-Remember: The goal is to provide a seamless development experience regardless of the developer's platform while ensuring production reliability.
+No special configuration is needed as Docker will use the appropriate architecture for your system.
 
 ## Docker Deployment Guidelines
 
@@ -485,7 +293,8 @@ Remember: The goal is to provide a seamless development experience regardless of
    - Development: Uses `localhost` or `127.0.0.1`
    - Production: Uses Docker service name (`db`)
    Example production URL:
-   ```
+
+   ```yaml
    DATABASE_URL=postgresql://postgres:password@db:5432/tgeld?schema=public
    ```
 
@@ -517,6 +326,7 @@ Remember: The goal is to provide a seamless development experience regardless of
 ### Overview
 
 We follow strict migration practices to ensure database changes work consistently across all environments:
+
 - Local development tooling
 - Docker development environment
 - Production deployment
@@ -554,6 +364,7 @@ We follow strict migration practices to ensure database changes work consistentl
 3. **Troubleshooting Migrations**
 
    If migrations fail in Docker:
+
    ```bash
    # 1. Check migration logs
    docker compose logs app
@@ -593,6 +404,7 @@ We follow strict migration practices to ensure database changes work consistentl
 ### Common Migration Scenarios
 
 1. **Adding a New Table**
+
    ```sql
    -- Example migration
    CREATE TABLE "new_feature" (
@@ -602,6 +414,7 @@ We follow strict migration practices to ensure database changes work consistentl
    ```
 
 2. **Modifying Existing Tables**
+
    ```sql
    -- Always use ALTER TABLE for existing tables
    ALTER TABLE "existing_table" 
@@ -609,6 +422,7 @@ We follow strict migration practices to ensure database changes work consistentl
    ```
 
 3. **Data Migrations**
+
    ```sql
    -- Include both schema and data changes
    ALTER TABLE "users" 
@@ -632,6 +446,7 @@ We follow strict migration practices to ensure database changes work consistentl
    - Maintains data integrity
 
 3. **Backup Procedures**
+
    ```bash
    # Always backup before migrations
    docker compose exec db pg_dump -U postgres tgeld > backup.sql
@@ -688,12 +503,14 @@ Remember: The goal is to maintain a reliable and consistent database state acros
 ### Platform Configuration
 
 1. **Docker Setup**
+
    ```bash
    # Check your architecture
    uname -m  # Should output 'arm64'
    ```
 
 2. **Update docker-compose.yml for M1**
+
    ```yaml
    services:
      app:
@@ -708,6 +525,7 @@ Remember: The goal is to maintain a reliable and consistent database state acros
 ### Development Workflow on M1
 
 1. **Initial Setup**
+
    ```bash
    # Create development database (local tooling)
    createdb tgeld
@@ -718,6 +536,7 @@ Remember: The goal is to maintain a reliable and consistent database state acros
    ```
 
 2. **Building for M1**
+
    ```bash
    # Build the image for ARM64
    docker build --platform linux/arm64 -f Dockerfile.prod -t tgeld:latest .
@@ -732,6 +551,7 @@ Remember: The goal is to maintain a reliable and consistent database state acros
    - Changes to Next.js pages will hot-reload
 
 4. **Database Operations**
+
    ```bash
    # Creating migrations (using local tooling)
    export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/tgeld"
@@ -747,6 +567,7 @@ Remember: The goal is to maintain a reliable and consistent database state acros
 
 1. **Architecture Mismatch**
    If you see errors about "wrong architecture" or "exec format error":
+
    ```bash
    # Verify the image architecture
    docker inspect tgeld:latest | grep Architecture
@@ -761,6 +582,7 @@ Remember: The goal is to maintain a reliable and consistent database state acros
 
 3. **Database Connection Issues**
    If local tooling can't connect:
+
    ```bash
    # Check PostgreSQL is running on ARM64
    docker compose exec db psql -U postgres -c "SHOW server_version_num;"
@@ -779,6 +601,7 @@ Remember: The goal is to maintain a reliable and consistent database state acros
    - Keep Docker Desktop updated
 
 3. **Testing Process**
+
    ```bash
    # Full testing cycle
    docker build --platform linux/arm64 -f Dockerfile.prod -t tgeld:latest .
@@ -807,12 +630,14 @@ Remember: The M1's ARM64 architecture requires explicit platform specifications,
 ### Quick Start
 
 1. **Clone Repository**
+
    ```bash
    git clone https://github.com/barneephife/tgeld.git
    cd tgeld
    ```
 
 2. **Start Development Environment**
+
    ```bash
    # Build the image
    docker build -f Dockerfile.prod -t barneephife/tgeld:latest .
@@ -822,6 +647,7 @@ Remember: The M1's ARM64 architecture requires explicit platform specifications,
    ```
 
 3. **Initialize Database**
+
    ```bash
    # In a new terminal
    docker compose exec db psql -U postgres -d tgeld -f init.sql
@@ -830,11 +656,13 @@ Remember: The M1's ARM64 architecture requires explicit platform specifications,
 ### Development Workflow
 
 1. **Start Development Server**
+
    ```bash
    docker compose up
    ```
 
 2. **Run Database Migrations**
+
    ```bash
    # Create migration
    docker compose exec app npx prisma migrate dev --name your_migration_name
@@ -844,6 +672,7 @@ Remember: The M1's ARM64 architecture requires explicit platform specifications,
    ```
 
 3. **View Logs**
+
    ```bash
    # All services
    docker compose logs -f
@@ -853,22 +682,25 @@ Remember: The M1's ARM64 architecture requires explicit platform specifications,
    ```
 
 4. **Access Services**
-   - Web App: http://localhost:21971
+   - Web App: <http://localhost:21971>
    - Database: localhost:5432
 
 ### Database Management
 
 1. **Connect to Database**
+
    ```bash
    docker compose exec db psql -U postgres -d tgeld
    ```
 
 2. **Backup Database**
+
    ```bash
    docker compose exec db pg_dump -U postgres tgeld > backup.sql
    ```
 
 3. **Restore Database**
+
    ```bash
    cat backup.sql | docker compose exec -T db psql -U postgres -d tgeld
    ```
@@ -876,11 +708,13 @@ Remember: The M1's ARM64 architecture requires explicit platform specifications,
 ### Testing
 
 1. **Run Tests**
+
    ```bash
    docker compose exec app npm test
    ```
 
 2. **Test Production Build**
+
    ```bash
    # Build production image
    docker build -f Dockerfile.prod -t barneephife/tgeld:latest .
@@ -892,6 +726,7 @@ Remember: The M1's ARM64 architecture requires explicit platform specifications,
 ### Troubleshooting
 
 1. **Reset Environment**
+
    ```bash
    # Stop and remove containers
    docker compose down -v
@@ -901,11 +736,13 @@ Remember: The M1's ARM64 architecture requires explicit platform specifications,
    ```
 
 2. **Check Service Status**
+
    ```bash
    docker compose ps
    ```
 
 3. **View Container Logs**
+
    ```bash
    docker compose logs -f app
    ```
