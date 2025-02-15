@@ -11,11 +11,50 @@ NC='\033[0m'
 
 # Default values
 REGISTRY="docker.io"
-REPOSITORY="barneephife/tgeld"
+REPOSITORY="tgeld/tgeld"
+VERSION=$(cat version.txt 2>/dev/null || echo "1.0.0")
 TAG="latest"
 PUSH=false
 LOCAL=false
 SKIP_TESTS=false
+
+# Function to increment version
+increment_version() {
+    local version_type=$1
+    local current_version=$2
+    local major minor patch
+    
+    # Split version into components
+    IFS='.' read -r major minor patch <<< "$current_version"
+    
+    case $version_type in
+        major)
+            major=$((major + 1))
+            minor=0
+            patch=0
+            ;;
+        minor)
+            minor=$((minor + 1))
+            patch=0
+            ;;
+        patch)
+            patch=$((patch + 1))
+            ;;
+        *)
+            echo "Invalid version type. Use: major, minor, or patch"
+            exit 1
+            ;;
+    esac
+    
+    echo "$major.$minor.$patch"
+}
+
+# Function to update version file
+update_version() {
+    local new_version=$1
+    echo "$new_version" > version.txt
+    echo -e "${GREEN}Updated version.txt to $new_version${NC}"
+}
 
 # Function to test API endpoints
 test_endpoint() {
@@ -71,6 +110,21 @@ run_api_tests() {
     test_endpoint "settings/language" "GET" "" "200" "Get language setting"
 }
 
+# Function to tag images
+tag_images() {
+    local base_tag="$1"
+    local version="$2"
+    local arch="$3"
+    
+    if [ -n "$arch" ]; then
+        echo -e "${YELLOW}Tagging for $arch${NC}"
+        docker tag $REGISTRY/$REPOSITORY:$base_tag $REGISTRY/$REPOSITORY:v$version-$arch
+    else
+        echo -e "${YELLOW}Tagging version${NC}"
+        docker tag $REGISTRY/$REPOSITORY:$base_tag $REGISTRY/$REPOSITORY:v$version
+    fi
+}
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -84,6 +138,15 @@ while [[ $# -gt 0 ]]; do
             ;;
         --tag)
             TAG="$2"
+            shift 2
+            ;;
+        --version)
+            VERSION="$2"
+            shift 2
+            ;;
+        --increment)
+            VERSION=$(increment_version "$2" "$VERSION")
+            update_version "$VERSION"
             shift 2
             ;;
         --skip-tests)
@@ -116,11 +179,13 @@ if [ "$LOCAL" = true ]; then
     echo -e "${YELLOW}Building AMD64 image...${NC}"
     docker buildx build --platform linux/amd64 -f Dockerfile.prod \
         -t $REGISTRY/$REPOSITORY:$TAG-amd64 --load .
+    tag_images "$TAG-amd64" "$VERSION" "amd64"
     
     # Build ARM64
     echo -e "${YELLOW}Building ARM64 image...${NC}"
     docker buildx build --platform linux/arm64 -f Dockerfile.prod \
         -t $REGISTRY/$REPOSITORY:$TAG-arm64 --load .
+    tag_images "$TAG-arm64" "$VERSION" "arm64"
     
     echo -e "${GREEN}Local builds complete!${NC}"
     
@@ -142,9 +207,11 @@ if [ "$LOCAL" = true ]; then
 
 elif [ "$PUSH" = true ]; then
     echo -e "${YELLOW}Building and pushing multi-architecture image...${NC}"
+    # Build and push with version tag
     docker buildx build --platform linux/amd64,linux/arm64 -f Dockerfile.prod \
-        -t $REGISTRY/$REPOSITORY:$TAG --push .
-    echo -e "${GREEN}Image pushed to $REGISTRY/$REPOSITORY:$TAG${NC}"
+        -t $REGISTRY/$REPOSITORY:v$VERSION \
+        -t $REGISTRY/$REPOSITORY:latest --push .
+    echo -e "${GREEN}Images pushed with tags: latest, v$VERSION${NC}"
 
 else
     echo -e "${RED}Error: Must specify either --local or --push${NC}"

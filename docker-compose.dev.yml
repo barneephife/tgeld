@@ -10,11 +10,11 @@ services:
       - /app/node_modules
       - /app/.next
     environment:
-      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD}@${DB_HOST:-db}:${DB_PORT:-5432}/${DB_DATABASE:-tgeld}?schema=public
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD}@${DB_HOST:-db}:${DB_PORT:-5433}/${DB_DATABASE:-tgeld}?schema=public
       - DB_USER=${DB_USER:-postgres}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_HOST=${DB_HOST:-db}
-      - DB_PORT=${DB_PORT:-5432}
+      - DB_PORT=${DB_PORT:-5433}
       - DB_DATABASE=${DB_DATABASE:-tgeld}
       - NODE_ENV=development
       - NEXT_TELEMETRY_DISABLED=1
@@ -39,14 +39,11 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_DATABASE:-tgeld}
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "${DB_PORT:-5433}:5432"
     volumes:
       - type: volume
         source: postgres_dev_data
         target: /var/lib/postgresql/data
-        labels:
-          - "com.tgeld.data=postgres"
-          - "com.tgeld.environment=development"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_DATABASE:-tgeld}"]
       interval: 5s

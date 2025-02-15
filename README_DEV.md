@@ -103,8 +103,7 @@ git push
 ### 5. Build Production Image
 ```bash
 # Build and test both architectures locally
-docker buildx build --platform linux/amd64 -f Dockerfile.prod -t tgeld:amd64-test . --load
-docker buildx build --platform linux/arm64 -f Dockerfile.prod -t tgeld:arm64-test . --load
+./scripts/build-multiarch.sh --local --version 1.0.0
 
 # Test the builds
 docker compose -f docker-compose.yml up
@@ -115,20 +114,96 @@ docker compose -f docker-compose.yml up
 - All features work in production build
 - No development dependencies included
 - Environment variables properly set
+- Version tags are correctly applied
+
+### Version Tagging Strategy
+
+When building production images, we follow semantic versioning (SemVer):
+
+1. **Version Tags**
+   - `v1.0.0` - Stable release version
+   - `latest` - Most recent stable version
+   - `v1.0.0-arm64` - Architecture-specific (local testing)
+   - `v1.0.0-amd64` - Architecture-specific (local testing)
+
+2. **When to Version**
+   - Major version (v2.0.0): Breaking changes
+   - Minor version (v1.1.0): New features
+   - Patch version (v1.0.1): Bug fixes
+
+### Version Management
+
+The project uses automated version management through the `version.txt` file and build script features.
+
+1. **Current Version**
+   - Stored in `version.txt` at the project root
+   - Automatically read by build scripts
+   - Tracked in version control
+
+2. **Incrementing Versions**
+   
+   For bug fixes (patch):
+   ```bash
+   ./scripts/build-multiarch.sh --push --increment patch
+   # Example: 1.0.0 -> 1.0.1
+   ```
+
+   For new features (minor):
+   ```bash
+   ./scripts/build-multiarch.sh --push --increment minor
+   # Example: 1.0.0 -> 1.1.0
+   ```
+
+   For breaking changes (major):
+   ```bash
+   ./scripts/build-multiarch.sh --push --increment major
+   # Example: 1.0.0 -> 2.0.0
+   ```
+
+3. **Manual Version Control** (if needed)
+   
+   Specify version directly:
+   ```bash
+   ./scripts/build-multiarch.sh --push --version 1.2.3
+   ```
+
+   Or edit `version.txt` directly before building:
+   ```bash
+   echo "1.2.3" > version.txt
+   ./scripts/build-multiarch.sh --push
+   ```
+
+4. **Version Management Best Practices**
+   - Always use `--increment` for automated version management
+   - Commit `version.txt` changes with your release
+   - Include version changes in commit messages
+   - Tag git commits with the same version number
+   - Document breaking changes in release notes
+
+5. **Release Process**
+   ```bash
+   # 1. Ensure all changes are committed
+   git status
+   
+   # 2. Build and push with version increment
+   ./scripts/build-multiarch.sh --push --increment minor
+   
+   # 3. Tag the git commit with the new version
+   git tag -a v$(cat version.txt) -m "Release version $(cat version.txt)"
+   git push origin v$(cat version.txt)
+   ```
 
 ### 6. Push to Docker Hub
 ```bash
-# Build and push multi-arch image
-docker buildx build --platform linux/amd64,linux/arm64 \
-  -f Dockerfile.prod \
-  -t barneephife/tgeld:latest \
-  --push .
+# Build and push multi-arch image with version tag
+./scripts/build-multiarch.sh --push --version 1.0.0
 ```
 
 ✅ Verify:
 - Both architecture variants pushed successfully
-- Tags are correct
+- Version tags are correct (latest, v1.0.0)
 - Image can be pulled and run on different architectures
+- Version number follows semantic versioning
 
 ## Troubleshooting
 

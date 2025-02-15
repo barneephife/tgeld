@@ -36,6 +36,8 @@ This principle guides all our development and deployment decisions. While develo
 
 ## Development to Production Workflow
 
+![Docker Development Workflow](docker-development-principles.jpg)
+
 ### 1. Development Phase
 ```mermaid
 graph TD
@@ -215,6 +217,74 @@ The build process must:
    - Tagged releases for production builds
    - Updated documentation with each release
    - Clear changelog maintenance
+
+## Image Versioning Strategy
+
+### Tag Structure
+Our Docker images follow a consistent versioning strategy:
+
+1. **Latest Tag**
+   - `latest` - Always points to the most recent stable version
+   - Used for development and testing
+   - Not recommended for production deployments
+
+2. **Semantic Version Tags**
+   - `v1.0.0` - Major version releases following SemVer
+   - Recommended for production deployments
+   - Provides stable, known states for rollback
+
+3. **Architecture-specific Tags**
+   - `v1.0.0-arm64` - ARM64 specific builds
+   - `v1.0.0-amd64` - AMD64 specific builds
+   - Used for testing and debugging architecture-specific issues
+
+### Version Management Rules
+
+1. **Tag Creation**
+   - New version tags created with each production release
+   - Architecture-specific tags generated during local testing
+   - Latest tag updated automatically with each release
+
+2. **Version Progression**
+   - Major version (X.0.0): Breaking changes
+   - Minor version (1.X.0): New features, backward compatible
+   - Patch version (1.0.X): Bug fixes and minor updates
+
+3. **Tag Maintenance**
+   - Keep all major version tags
+   - Maintain at least last three minor versions
+   - Clean up architecture-specific tags after testing
+
+### Build Process Integration
+
+1. **Local Development**
+   ```bash
+   ./scripts/build-multiarch.sh --local --version 1.0.0
+   ```
+   - Creates architecture-specific tags
+   - Enables local testing of both architectures
+
+2. **Production Release**
+   ```bash
+   ./scripts/build-multiarch.sh --push --version 1.0.0
+   ```
+   - Creates semantic version tag
+   - Updates latest tag
+   - Pushes multi-architecture image
+
+### Version Compatibility
+
+1. **Database Compatibility**
+   - Document database version requirements
+   - Include migration paths between versions
+   - Test upgrades between consecutive versions
+
+2. **Client Compatibility**
+   - Document API version changes
+   - Maintain backward compatibility when possible
+   - Include upgrade guides for breaking changes
+
+Remember: The M1's ARM64 architecture requires explicit platform specifications, but once configured, it provides excellent performance for Docker containers.
 
 ## Conclusion
 
