@@ -190,6 +190,12 @@ if [ "$LOCAL" = true ]; then
     echo -e "${GREEN}Local builds complete!${NC}"
     
     if [ "$SKIP_TESTS" = false ]; then
+        # Set test environment variables
+        export DB_PASSWORD=TGeld2025DB
+        export DB_USER=postgres
+        export DB_DATABASE=tgeld
+        export DB_PORT=5432
+        
         # Test AMD64 build
         echo -e "${YELLOW}Testing AMD64 build...${NC}"
         docker tag $REGISTRY/$REPOSITORY:$TAG-amd64 $REGISTRY/$REPOSITORY:$TAG
