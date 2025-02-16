@@ -1,87 +1,49 @@
-const { PrismaClient } = require('@prisma/client');
+const { Pool } = require('pg');
 
-const prisma = new PrismaClient();
+async function initializeData() {
+  const pool = new Pool({
+    user: process.env.DB_USER || 'postgres',
+    host: process.env.DB_HOST || 'db',
+    database: process.env.DB_DATABASE || 'tgeld',
+    password: process.env.DB_PASSWORD,
+    port: parseInt(process.env.DB_PORT || '5432'),
+  });
 
-async function initializeDefaultData() {
   try {
-    // Initialize default app settings if they don't exist
-    const requiredSettings = [
-      { key: 'enforce_roles', value: 'true' },
-      { key: 'currency', value: 'CHF' },
-      { key: 'currency_format', value: 'symbol' },
-      { key: 'show_german_terms', value: 'true' },
-      { key: 'global_pin', value: null }
-    ];
-
-    for (const setting of requiredSettings) {
-      const existingSetting = await prisma.appSetting.findUnique({
-        where: { setting_key: setting.key }
-      });
-
-      if (!existingSetting) {
-        await prisma.appSetting.create({
-          data: {
-            setting_key: setting.key,
-            setting_value: setting.value
-          }
-        });
-        console.log(`Created default setting: ${setting.key}`);
-      }
-    }
-
-    // Check if any users exist
-    const userCount = await prisma.user.count();
-  
-    if (userCount === 0) {
-      console.log('No users found. Creating default data...');
+    // Check if settings already exist
+    const settingsCheck = await pool.query('SELECT COUNT(*) FROM app_settings');
+    
+    if (parseInt(settingsCheck.rows[0].count) === 0) {
+      console.log('Initializing default settings...');
       
-      try {
-        // Create default user
-        const defaultUser = await prisma.user.create({
-          data: {
-            name: 'Example User',
-            icon: '👤',
-            birthday: new Date(),
-          },
-        });
-
-        // Create piggy bank account for the user
-        const piggyBankAccount = await prisma.piggybankAccount.create({
-          data: {
-            account_number: '1000000001',
-            balance: 0,
-            user_id: defaultUser.user_id,
-          },
-        });
-
-        // Update user with the piggy bank account
-        await prisma.user.update({
-          where: { user_id: defaultUser.user_id },
-          data: { piggybank_account_id: piggyBankAccount.account_id },
-        });
-
-        // Create one example task
-        await prisma.task.create({
-          data: {
-            title: 'Example Task',
-            description: 'This is an example task. You can edit or delete it, and create new tasks as needed.',
-            icon_name: '📝',
-            payout_value: 1.00,
-          },
-        });
-
-        console.log('Default user and task created successfully!');
-      } catch (error) {
-        console.error('Error creating default data:', error);
-      }
+      // Insert default settings
+      await pool.query(`
+        INSERT INTO app_settings (setting_key, setting_value) VALUES
+        ('enforce_roles', 'true'),
+        ('currency', 'EUR'),
+        ('language', 'de'),
+        ('theme', 'light'),
+        ('notifications_enabled', 'true')
+      `);
+      
+      console.log('Default settings initialized successfully');
     } else {
-      console.log('Users already exist. Skipping default data creation.');
+      console.log('Settings already exist, skipping initialization');
     }
+
+    return true;
   } catch (error) {
-    console.error('Error initializing default data:', error);
+    console.error('Error initializing data:', error);
+    return false;
+  } finally {
+    await pool.end();
   }
 }
 
-initializeDefaultData()
-  .catch(console.error)
-  .finally(() => prisma.$disconnect());
+// Run the initialization
+initializeData()
+  .then(success => process.exit(success ? 0 : 1))
+  .catch(error => {
+    console.error('Initialization script failed:', error);
+    process.exit(1);
+  });

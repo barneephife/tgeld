@@ -10,11 +10,11 @@ services:
       - /app/node_modules
       - /app/.next
     environment:
-      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@db:5433/tgeld?schema=public
+      - DATABASE_URL=postgresql://postgres:${DB_PASSWORD}@db:5432/tgeld?schema=public
       - DB_USER=postgres
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_HOST=db
-      - DB_PORT=5433
+      - DB_PORT=5432
       - DB_DATABASE=tgeld
       - NODE_ENV=development
       - NEXT_TELEMETRY_DISABLED=1
@@ -39,7 +39,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_DATABASE:-tgeld}
     ports:
-      - "${DB_PORT:-5433}:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - type: volume
         source: postgres_dev_data
