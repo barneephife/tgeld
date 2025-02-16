@@ -27,8 +27,8 @@ ENV SKIP_ENV_VALIDATION=1
 ENV SKIP_CLEANUP=true
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?schema=public"
 
-# Generate Prisma Client during build with correct binary targets
-RUN npx prisma generate --generator client '{ "provider": "prisma-client-js", "binaryTargets": ["linux-musl", "linux-musl-openssl-3.0.x"] }'
+# Generate Prisma Client during build
+RUN npx prisma generate
 
 # Build application
 RUN npm run build

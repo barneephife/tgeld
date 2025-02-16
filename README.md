@@ -50,6 +50,10 @@ The application is available as a multi-architecture Docker image supporting bot
    POSTGRES_DATA_DIR=./data/postgres
    ```
    ⚠️ Replace `your_secure_password` with your chosen password in BOTH places
+   ⚠️ Password Requirements:
+     - Use only alphanumeric characters (a-z, A-Z, 0-9)
+     - Avoid special characters (!@#$%^&*) as they may cause issues with the PostgreSQL connection string
+     - Example of a good password: TGeld2025DB
 
 3. Create `docker-compose.yml`:
    ```yaml
