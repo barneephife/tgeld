@@ -51,6 +51,12 @@ done
 # Wait for database
 wait_for_db
 
+# Construct DATABASE_URL if not set
+if [ -z "${DATABASE_URL}" ]; then
+    export DATABASE_URL="postgresql://${DB_USER:-postgres}:${DB_PASSWORD}@${DB_HOST:-db}:${DB_PORT:-5432}/${DB_DATABASE:-tgeld}?schema=public"
+    echo "DATABASE_URL constructed from environment variables"
+fi
+
 # Generate Prisma client
 echo "Generating Prisma client..."
 if ! npx prisma generate; then
