@@ -17,14 +17,22 @@ function getPool() {
 
     console.log('Creating new database pool');
     console.log('Environment:', process.env.NODE_ENV);
-    console.log('Database URL:', process.env.DATABASE_URL);
+    
+    // Parse the existing connection URL
+    const connectionUrl = new URL(process.env.DATABASE_URL || '');
+    
+    // Add sslmode=disable for Docker environment
+    if (process.env.NODE_ENV === 'production') {
+      connectionUrl.searchParams.set('sslmode', 'disable');
+    }
+    
+    console.log('Database URL:', connectionUrl.toString());
 
     pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString: connectionUrl.toString(),
       max: 20,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
-      ssl: false
+      connectionTimeoutMillis: 2000
     });
 
     // Add error handler to the pool
