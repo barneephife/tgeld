@@ -1,0 +1,27 @@
+---
+description: Development Principles for this Project - Taschengeld
+globs: 
+---
+This project has strictly defined rules for software development.
+Read the files:
+/docs/docker-development-principles.md
+/docs/docker-development-principles.jpg
+/docs/docker-development-principles.drawio
+/README_DEV.md
+
+Good to know is also the /README.md  #Used for understaning how the Production environment is to be set up and utilized.
+
+Your development environment is:
+MacBook Pro M1 Max
+- contains this project codebase
+- Used only for development
+- Docker Compose is installed
+- You have terminal console access
+- ONLY USE /README_DEV.md when interacting with this system
+
+Ubuntu Server (happy)
+- is the production environment
+- never runs the development environment
+- Docker Compose is installed
+- You can ssh to this server using terminal console and "ssh happy" to establish connection
+- ONLY USE /README.md when interacting with this server

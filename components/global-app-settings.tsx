@@ -41,11 +41,18 @@ interface ResetDialogState {
   type: ResetType | null;
 }
 
+interface UserBackup {
+  name: string;
+  icon?: string;
+  sound_url?: string | null;
+  birthday?: string;
+}
+
 interface TaskBackup {
   title: string;
   description: string;
   icon_name: string;
-  sound_url: string;
+  sound_url: string | null;
   payout_value: string;
   is_active: boolean;
 }
@@ -54,8 +61,8 @@ interface CompletedTaskBackup {
   user_id: number;
   description: string;
   payout_value: string;
-  comment: string;
-  attachment: string;
+  comment: string | null;
+  attachment: string | null;
   payment_status: string;
 }
 
@@ -72,6 +79,14 @@ interface TransactionBackup {
   photo: string | null;
   user_name: string;
   transaction_date: string;
+}
+
+interface AllBackupData {
+  users: UserBackup[];
+  tasks: TaskBackup[];
+  completed_tasks: CompletedTaskBackup[];
+  accounts: AccountBackup[];
+  transactions: TransactionBackup[];
 }
 
 interface BackupData {
@@ -94,11 +109,7 @@ interface BackupData {
         };
       };
     };
-    all?: {
-      tasks: TaskBackup[];
-      accounts: AccountBackup[];
-      transactions: TransactionBackup[];
-    };
+    all?: AllBackupData;
   };
 }
 
@@ -415,10 +426,49 @@ export function GlobalAppSettings() {
             dataToRestore = piggyData;
             break;
           case 'all':
-            if (!backupData.data.all?.tasks || !backupData.data.all?.accounts) {
-              throw new Error('Invalid full backup file. Missing required data.');
+            // Validate all required fields exist
+            if (!backupData.data.all) {
+              throw new Error('Invalid full backup file. Missing all data section.');
             }
-            dataToRestore = backupData.data.all;
+            const allData: AllBackupData = backupData.data.all;
+            
+            // Check each required field
+            if (!Array.isArray(allData.users)) {
+              throw new Error('Invalid full backup file. Users data is missing or invalid.');
+            }
+            if (!Array.isArray(allData.tasks)) {
+              throw new Error('Invalid full backup file. Tasks data is missing or invalid.');
+            }
+            if (!Array.isArray(allData.completed_tasks)) {
+              throw new Error('Invalid full backup file. Completed tasks data is missing or invalid.');
+            }
+            if (!Array.isArray(allData.accounts)) {
+              throw new Error('Invalid full backup file. Accounts data is missing or invalid.');
+            }
+            if (!Array.isArray(allData.transactions)) {
+              throw new Error('Invalid full backup file. Transactions data is missing or invalid.');
+            }
+
+            // Validate required fields in each array
+            allData.users.forEach((user: UserBackup, index: number) => {
+              if (!user.name) {
+                throw new Error(`Invalid user data at index ${index}. Missing required field: name`);
+              }
+            });
+
+            allData.tasks.forEach((task: TaskBackup, index: number) => {
+              if (!task.title || !task.payout_value) {
+                throw new Error(`Invalid task data at index ${index}. Missing required fields: title or payout_value`);
+              }
+            });
+
+            allData.accounts.forEach((account: AccountBackup, index: number) => {
+              if (!account.account_number || !account.user_name) {
+                throw new Error(`Invalid account data at index ${index}. Missing required fields: account_number or user_name`);
+              }
+            });
+
+            dataToRestore = allData;
             break;
         }
 

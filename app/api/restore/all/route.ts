@@ -5,6 +5,7 @@ export async function POST(request: Request) {
   const client = await pool.connect();
   try {
     const { users, tasks, completed_tasks, accounts, transactions } = await request.json();
+    console.log('Received data for restore:', JSON.stringify({ users, tasks, completed_tasks, accounts, transactions }, null, 2));
 
     await client.query('BEGIN');
 
@@ -31,19 +32,21 @@ export async function POST(request: Request) {
     const accountMappings = new Map();
 
     // Restore users
+    console.log('Restoring users...');
     for (const user of users) {
       const result = await client.query(
         `
-        INSERT INTO users (name, icon, soundurl, birthday)
+        INSERT INTO users (name, icon, sound_url, birthday)
         VALUES ($1, $2, $3, $4)
         RETURNING user_id
         `,
-        [user.name, user.icon, user.soundurl, user.birthday]
+        [user.name, user.icon, user.sound_url, user.birthday]
       );
       userMappings.set(user.name, result.rows[0].user_id);
     }
 
     // Restore tasks
+    console.log('Restoring tasks...');
     for (const task of tasks) {
       const result = await client.query(
         `
@@ -64,6 +67,7 @@ export async function POST(request: Request) {
     }
 
     // Restore accounts
+    console.log('Restoring accounts...');
     for (const account of accounts) {
       const userId = userMappings.get(account.user_name);
       if (userId) {
@@ -85,14 +89,24 @@ export async function POST(request: Request) {
            WHERE user_id = $2`,
           [newAccountId, userId]
         );
+      } else {
+        console.log(`Warning: No user found for account with user_name: ${account.user_name}`);
       }
     }
 
     // Restore completed tasks
+    console.log('Restoring completed tasks...');
     if (completed_tasks && completed_tasks.length > 0) {
       for (const ct of completed_tasks) {
-        const userId = userMappings.get(ct.user_name);
-        const taskId = taskMappings.get(ct.task_title);
+        // Find the user ID from the user_id directly
+        const userId = ct.user_id;
+        
+        // For completed tasks, we'll match by description since we don't have task_title
+        const taskResult = await client.query(
+          'SELECT task_id FROM tasks WHERE description = $1 LIMIT 1',
+          [ct.description]
+        );
+        const taskId = taskResult.rows[0]?.task_id;
 
         if (userId && taskId) {
           await client.query(
@@ -111,14 +125,26 @@ export async function POST(request: Request) {
               ct.payment_status,
             ]
           );
+        } else {
+          console.log(`Warning: Could not restore completed task. User ID: ${userId}, Task Description: ${ct.description}`);
         }
       }
     }
 
     // Restore transactions
+    console.log('Restoring transactions...');
     if (transactions && transactions.length > 0) {
       for (const transaction of transactions) {
-        const accountId = accountMappings.get(transaction.account_number);
+        // Find the account through the user_name
+        const accountResult = await client.query(
+          `SELECT pa.account_id 
+           FROM piggybank_accounts pa
+           JOIN users u ON pa.user_id = u.user_id
+           WHERE u.name = $1`,
+          [transaction.user_name]
+        );
+        const accountId = accountResult.rows[0]?.account_id;
+
         if (accountId) {
           await client.query(
             `
@@ -135,6 +161,8 @@ export async function POST(request: Request) {
               transaction.transaction_date,
             ]
           );
+        } else {
+          console.log(`Warning: No account found for transaction with user_name: ${transaction.user_name}`);
         }
       }
     }

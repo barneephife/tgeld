@@ -1,0 +1,11 @@
+---
+description: Never Make Assumptions
+globs: 
+---
+# When performing an action which has a dependency on a tool or file or any content, never assume anything about it.
+
+Never assume it is NOT installed / exists.
+
+Never assume that it IS installed / exists.
+
+Always issue the relative command or check procees to DETERMINE the actual state.
