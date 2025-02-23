@@ -1,14 +1,20 @@
+version: '3.8'
+
 services:
   app:
     platform: linux/amd64
     build:
+      context: .
+      dockerfile: Dockerfile.prod
       args:
         BUILDPLATFORM: linux/amd64
         TARGETPLATFORM: linux/amd64
     labels:
       - "com.tgeld.architecture=amd64"
+      - "com.tgeld.environment=production"
 
   db:
     platform: linux/amd64
     labels:
       - "com.tgeld.architecture=amd64"
+      - "com.tgeld.environment=production"

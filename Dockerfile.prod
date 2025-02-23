@@ -9,7 +9,8 @@ RUN apk add --no-cache \
     postgresql-client \
     python3 \
     make \
-    g++
+    g++ \
+    curl
 
 # Copy package files
 COPY package*.json ./
@@ -26,9 +27,24 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV SKIP_ENV_VALIDATION=1
 ENV SKIP_CLEANUP=true
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?schema=public"
+ENV HOST=0.0.0.0
+ENV NEXT_PUBLIC_API_URL=http://localhost:3000
 
-# Generate Prisma Client during build
-RUN npx prisma generate
+# Generate Prisma Client during build with explicit binary targets and caching
+RUN --mount=type=cache,target=/app/.prisma/client \
+    npx prisma generate --generator client { \
+    provider = "prisma-client-js", \
+    binaryTargets = [ \
+        "native", \
+        "linux-arm64-openssl-1.1.x", \
+        "linux-arm64-openssl-3.0.x", \
+        "linux-musl-openssl-3.0.x", \
+        "linux-musl", \
+        "debian-openssl-1.1.x", \
+        "debian-openssl-3.0.x", \
+        "linux-arm64-openssl-1.1.x" \
+    ] \
+}
 
 # Build application
 RUN npm run build
@@ -50,8 +66,8 @@ FROM node:18-alpine AS runner
 # Install only the necessary system packages and create user
 RUN apk add --no-cache \
     postgresql-client \
-    wget \
-    curl && \
+    curl \
+    wget && \
     addgroup -S -g 1001 nodejs && \
     adduser -S -u 1001 -G nodejs nextjs && \
     mkdir -p /app/uploads && \
@@ -73,13 +89,20 @@ COPY --chown=nextjs:nodejs scripts/initialize-data.js ./scripts/initialize-data.
 # Switch to non-root user
 USER nextjs
 
-# Add application and database healthchecks
-HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+# Add application and database healthchecks with improved configuration
+HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:3000/api/health || exit 1
 
+# Set production environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV HOST=0.0.0.0
+ENV NEXT_PUBLIC_API_URL=http://localhost:3000
+
+# Create volume mount points with proper permissions
+VOLUME ["/app/uploads", "/app/data"]
+RUN chown -R nextjs:nodejs /app/uploads /app/data
 
 EXPOSE 3000
 
